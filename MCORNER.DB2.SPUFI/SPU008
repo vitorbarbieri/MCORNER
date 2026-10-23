@@ -1,0 +1,42 @@
+-- ====================================================================
+-- SCRIPT   : CREACION DE TABLA DE AYUDA / PANTALLAS CICS
+-- OBJETIVO : DEFINIR LA ESTRUCTURA PARA ALMACENAR TEXTOS O LINEAS DE
+--            AYUDA ASOCIADAS A LAS TRANSACCIONES (EJ. PANTALLAS F1),
+--            OPTIMIZADA CON UN INDICE UNICO AGRUPADO POR TRANSACCION
+--            Y PAGINA
+-- VERSION  : 1.0
+-- ====================================================================
+
+-- DROP TABLE MCORNER.AYUDAS;
+
+-- COMMIT;
+
+CREATE TABLE MCORNER.AYUDAS (
+    TRANSACCION   CHAR(4)    NOT NULL,
+    PAGINA        INT        DEFAULT 0,
+    L01           CHAR(80)   DEFAULT ' ',
+    L02           CHAR(80)   DEFAULT ' ',
+    L03           CHAR(80)   DEFAULT ' ',
+    L04           CHAR(80)   DEFAULT ' ',
+    L05           CHAR(80)   DEFAULT ' ',
+    L06           CHAR(80)   DEFAULT ' ',
+    L07           CHAR(80)   DEFAULT ' ',
+    L08           CHAR(80)   DEFAULT ' ',
+    L09           CHAR(80)   DEFAULT ' ',
+    L10           CHAR(80)   DEFAULT ' ',
+    L11           CHAR(80)   DEFAULT ' ',
+    L12           CHAR(80)   DEFAULT ' ',
+    L13           CHAR(80)   DEFAULT ' ',
+    L14           CHAR(80)   DEFAULT ' ',
+    L15           CHAR(80)   DEFAULT ' ',
+    L16           CHAR(80)   DEFAULT ' '
+) IN MCORNDB.AYUDASTS;
+
+CREATE UNIQUE INDEX AYUDAS_IPK ON MCORNER.AYUDAS (
+    TRANSACCION,
+    PAGINA
+) CLUSTER CLOSE NO
+  USING STOGROUP MCORNSG
+  BUFFERPOOL BP1;
+
+COMMIT;

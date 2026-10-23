@@ -1,0 +1,18 @@
+-- ====================================================================
+-- SCRIPT   : CREACION DE BASE DE DATOS (DATABASE) EN DB2 Z/OS
+-- OBJETIVO : DEFINIR UNA NUEVA BASE DE DADOS LOGICA AGRUPANDO
+--            PARAMETROS PREDETERMINADOS DE ALMACENAMIENTO, CONJUNTO
+--            DE CARACTERES Y BUFERES
+-- VERSION  : 1.0
+-- ====================================================================
+
+-- DROP DATABASE MCORNDB;
+
+-- COMMIT;
+
+CREATE DATABASE MCORNDB
+    CCSID EBCDIC
+    BUFFERPOOL BP1
+    STOGROUP MCORNSG;
+
+COMMIT;

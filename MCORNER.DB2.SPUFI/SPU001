@@ -1,0 +1,16 @@
+-- ====================================================================
+-- SCRIPT   : CREACION DE STORAGE GROUP (STOGROUP)
+-- OBJETIVO : DEFINIR EL GRUPO DE ALMACENAMIENTO FISICO PARA LOS
+--            OBJETOS DEL CATALOGO/BASE DE DATOS DB2
+-- VERSION  : 1.0
+-- ====================================================================
+
+-- DROP STOGROUP MCORNSG;
+
+-- COMMIT;
+
+CREATE STOGROUP MCORNSG
+    VOLUMES (PRJ001)
+    VCAT MCORNCAT;
+
+COMMIT;

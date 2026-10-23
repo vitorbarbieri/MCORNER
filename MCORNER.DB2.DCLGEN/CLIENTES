@@ -1,0 +1,33 @@
+      ******************************************************************
+      * DCLGEN TABLE(MCORNER.CLIENTES)                                 *
+      *        LIBRARY(MCORNER.DB2.DCLGEN(CLIENTES))                   *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        NAMES(CL-)                                              *
+      *        STRUCTURE(CL-CLIENTES)                                  *
+      *        QUOTE                                                   *
+      *        DBCSDELIM(NO)                                           *
+      *        COLSUFFIX(YES)                                          *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE MCORNER.CLIENTES TABLE
+           ( DNI                            CHAR(9) NOT NULL,
+             NOMBRE                         CHAR(20) NOT NULL,
+             APELLIDOS                      CHAR(20) NOT NULL,
+             DIRECCION                      CHAR(35) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE MCORNER.CLIENTES                   *
+      ******************************************************************
+       01  CL-CLIENTES.
+      *                       DNI
+           10 CL-DNI               PIC X(9).
+      *                       NOMBRE
+           10 CL-NOMBRE            PIC X(20).
+      *                       APELLIDOS
+           10 CL-APELLIDOS         PIC X(20).
+      *                       DIRECCION
+           10 CL-DIRECCION         PIC X(35).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 4       *
+      ******************************************************************

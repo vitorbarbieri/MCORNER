@@ -1,0 +1,75 @@
+      ******************************************************************
+      * DCLGEN TABLE(MCORNER.AYUDAS)                                   *
+      *        LIBRARY(MCORNER.DB2.DCLGEN(AYUDAS))                     *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        NAMES(AY-)                                              *
+      *        STRUCTURE(AY-AYUDAS)                                    *
+      *        QUOTE                                                   *
+      *        DBCSDELIM(NO)                                           *
+      *        COLSUFFIX(YES)                                          *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE MCORNER.AYUDAS TABLE
+           ( TRANSACCION                    CHAR(4) NOT NULL,
+             PAGINA                         INTEGER,
+             L01                            CHAR(80),
+             L02                            CHAR(80),
+             L03                            CHAR(80),
+             L04                            CHAR(80),
+             L05                            CHAR(80),
+             L06                            CHAR(80),
+             L07                            CHAR(80),
+             L08                            CHAR(80),
+             L09                            CHAR(80),
+             L10                            CHAR(80),
+             L11                            CHAR(80),
+             L12                            CHAR(80),
+             L13                            CHAR(80),
+             L14                            CHAR(80),
+             L15                            CHAR(80),
+             L16                            CHAR(80)
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE MCORNER.AYUDAS                     *
+      ******************************************************************
+       01  AY-AYUDAS.
+      *                       TRANSACCION
+           10 AY-TRANSACCION       PIC X(4).
+      *                       PAGINA
+           10 AY-PAGINA            PIC S9(9) USAGE COMP.
+      *                       L01
+           10 AY-L01               PIC X(80).
+      *                       L02
+           10 AY-L02               PIC X(80).
+      *                       L03
+           10 AY-L03               PIC X(80).
+      *                       L04
+           10 AY-L04               PIC X(80).
+      *                       L05
+           10 AY-L05               PIC X(80).
+      *                       L06
+           10 AY-L06               PIC X(80).
+      *                       L07
+           10 AY-L07               PIC X(80).
+      *                       L08
+           10 AY-L08               PIC X(80).
+      *                       L09
+           10 AY-L09               PIC X(80).
+      *                       L10
+           10 AY-L10               PIC X(80).
+      *                       L11
+           10 AY-L11               PIC X(80).
+      *                       L12
+           10 AY-L12               PIC X(80).
+      *                       L13
+           10 AY-L13               PIC X(80).
+      *                       L14
+           10 AY-L14               PIC X(80).
+      *                       L15
+           10 AY-L15               PIC X(80).
+      *                       L16
+           10 AY-L16               PIC X(80).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 18      *
+      ******************************************************************

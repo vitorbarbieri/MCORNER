@@ -1,0 +1,57 @@
+//JBMSCOMP JOB MCORNER,'COMP-MAP',NOTIFY=&SYSUID,
+//         MSGCLASS=A,CLASS=A,MSGLEVEL=(1,1),REGION=0M,TIME=(0,7)
+//*
+//* JCL PARA COMPILAR MAPAS BMS
+//* VERSION 1.0
+//*
+//* ==================================================================
+//*
+//SETP     SET MAP=HOLMMP
+//*
+//* ------------------------------------------------------------------
+//*        COMPILACION DEL MAPA BMS (MAPA FISICO / ASSEMBLER)
+//* ------------------------------------------------------------------
+//COMPIL   EXEC PGM=ASMA90,REGION=2000K,PARM='SYSPARM(MAP)'
+//*
+//SYSLIB   DD DSN=DFH410.CICS.SDFHMAC,DISP=SHR
+//         DD DSN=SYS1.MACLIB,DISP=SHR
+//SYSUT1   DD SPACE=(1700,(999,999)),UNIT=SYSDA
+//SYSUT2   DD SPACE=(1700,(300,50)),UNIT=SYSDA
+//SYSUT3   DD SPACE=(1700,(300,50)),UNIT=SYSDA
+//SYSLIN   DD DSN=&&LOADSET,DISP=(MOD,PASS),UNIT=SYSDA,
+//         SPACE=(800,(500,500))
+//SYSIN    DD DSN=MCORNER.CICS.MAP(&MAP),DISP=SHR
+//SYSPRINT DD SYSOUT=A
+//SYSUDUMP DD SYSOUT=*
+//*
+//* ------------------------------------------------------------------
+//*        LINKEDIT (HEAP/BIND) DEL LOAD MODULE EN LA LIBRERIA
+//*        CONDICION: SE EJECUTA SI COMPILACION DA RC <= 4
+//* ------------------------------------------------------------------
+//LKED     EXEC PGM=IEWL,PARM='LIST,XREF,LET',REGION=2000K,
+//         COND=(0,NE,COMPIL)
+//*
+//SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)
+//*        DD DDNAME=SYSIN
+//SYSLMOD  DD DISP=SHR,DSN=MCORNER.CICS.LOAD(&MAP)
+//SYSUT1   DD SPACE=(1024,(50,50)),UNIT=SYSDA
+//SYSPRINT DD SYSOUT=A
+//SYSUDUMP DD SYSOUT=*
+//*
+//* ------------------------------------------------------------------
+//*        GENERACION DE LA COPY SIMBOLICA (DSECT PARA COBOL)
+//*        GENERA EL STRUCT PARA EL INPUT/OUTPUT DEL MAPA
+//* ------------------------------------------------------------------
+//ASMDSECT EXEC PGM=ASMA90,REGION=2000K,
+//         PARM='SYSPARM(A.DSECT),DECK,NOOBJECT',
+//         COND=((0,NE,COMPIL),(0,NE,LKED))
+//*
+//SYSPRINT DD SYSOUT=A
+//SYSLIB   DD DSN=DFH410.CICS.SDFHMAC,DISP=SHR
+//         DD DSN=SYS1.MACLIB,DISP=SHR
+//SYSUT1   DD UNIT=SYSDA,SPACE=(TRK,(5,5))
+//SYSUT2   DD UNIT=SYSDA,SPACE=(TRK,(5,5))
+//SYSUT3   DD UNIT=SYSDA,SPACE=(TRK,(5,5))
+//SYSPUNCH DD DSN=MCORNER.COBOL.COPYS(&MAP),DISP=SHR
+//SYSIN    DD DSN=MCORNER.CICS.MAP(&MAP),DISP=SHR
+//*

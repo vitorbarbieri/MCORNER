@@ -1,0 +1,147 @@
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                     -----  MAP  'HOLMMP'  -----                     *
+*                 PANTALLA MENU DE GESTION DE CLIENTES                *
+*                             VERSION 1.0                             *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+HOLMMP   DFHMSD TYPE=DSECT,                                            X
+               MODE=INOUT,                                             X
+               LANG=COBOL,                                             X
+               TIOAPFX=YES,                                            X
+               TERM=ALL,                                               X
+               CTRL=FREEKB,                                            X
+               STORAGE=AUTO,                                           X
+               EXTATT=YES,                                             X
+               COLOR=GREEN,                                            X
+               MAPATTS=(COLOR,HILIGHT,OUTLINE),                        X
+               DSATTS=(COLOR,HILIGHT,OUTLINE)
+*
+HOLMMP   DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                             ENCABEZADO                              *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+TRN      DFHMDF POS=(01,01),                                           X
+               LENGTH=04,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='HOLM'
+*
+TITLE    DFHMDF POS=(01,26),                                           X
+               LENGTH=27,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='MENU DE GESTION DE CLIENTES'
+*
+         DFHMDF POS=(02,01),                                           X
+               LENGTH=78,                                              X
+               INITIAL='===============================================X
+               ===============================',                       X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               CUERPO                                *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+CUR1     DFHMDF POS=(07,17),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,FSET),                                    X
+               COLOR=GREEN,                                            X
+               HILIGHT=UNDERLINE
+         DFHMDF POS=(07,19),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+         DFHMDF POS=(07,21),                                           X
+               LENGTH=24,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='1 - CONSULTA DE CLIENTES'
+*
+CUR2     DFHMDF POS=(08,17),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,FSET),                                    X
+               COLOR=GREEN,                                            X
+               HILIGHT=UNDERLINE
+         DFHMDF POS=(08,19),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+         DFHMDF POS=(08,21),                                           X
+               LENGTH=20,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='2 - ALTA DE CLIENTES'
+*
+CUR3     DFHMDF POS=(09,17),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,FSET),                                    X
+               COLOR=GREEN,                                            X
+               HILIGHT=UNDERLINE
+         DFHMDF POS=(09,19),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+         DFHMDF POS=(09,21),                                           X
+               LENGTH=28,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='3 - MODIFICACION DE CLIENTES'
+*
+CUR4     DFHMDF POS=(10,17),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,FSET),                                    X
+               COLOR=GREEN,                                            X
+               HILIGHT=UNDERLINE
+         DFHMDF POS=(10,19),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+         DFHMDF POS=(10,21),                                           X
+               LENGTH=20,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='4 - BAJA DE CLIENTES'
+*
+         DFHMDF POS=(13,21),                                           X
+               LENGTH=07,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='OPCION:'
+*
+OPC      DFHMDF POS=(13,29),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,FSET,NUM,IC),                             X
+               COLOR=GREEN,                                            X
+               PICIN='9',                                              X
+               PICOUT='Z',                                             X
+               HILIGHT=UNDERLINE
+*
+         DFHMDF POS=(13,31),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                            PIE DE PAGINA                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+         DFHMDF POS=(21,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+         DFHMDF POS=(22,01),                                           X
+               LENGTH=34,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='F1-AYUDA   F3-FIN   INTRO-PROCESAR'
+*
+         DFHMDF POS=(23,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+MSG      DFHMDF POS=(24,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,BRT,FSET),                                  X
+               COLOR=RED
+*
+         DFHMSD TYPE=FINAL
+         END

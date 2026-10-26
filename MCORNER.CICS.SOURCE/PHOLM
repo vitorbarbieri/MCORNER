@@ -1,0 +1,266 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. PHOLM.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ...........: HOL                                  *
+      *    PROGRAMA ...........: PHOLM                                *
+      *    VERSION ............: 1.0                                  *
+      *    TITULO .............: MENU GENERAL DE CLIENTES             *
+      *                                                               *
+      *    TIPO ...............:                                      *
+      *    - LENGUAJE .........: COBOL                                *
+      *    - ENTORNO ..........: CICS                                 *
+      *    - BASE DE DATOS ....: DB2                                  *
+      *                                                               *
+      *    DESCRIPCION ........:                                      *
+      *    - MENU PRINCIPAL PARA LA GESTION DE CLIENTES. PERMITE      *
+      *      SELECCIONAR UNA DE LAS SIGUIENTES OPCIONES: (A) ALTA,    *
+      *      (B) BAJA, (C) CONSULTA O (M) MODIFICACION, E INVOCAR     *
+      *      EL PROGRAMA CORRESPONDIENTE PARA REALIZAR LA OPERACION   *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-10-26 CREACION DEL PROGRAMA PHOLM                     *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA CICS --------------------------------------------------
+       COPY DFHAID.
+       COPY DFHBMSCA.
+       COPY HOLMMP.
+
+       01  CA-COMMAREA-HOL.
+           03 CA-COMUN.
+              05 CA-TRANS                  PIC X(04).
+              05 CA-TRANS-RETORNO          PIC X(04).
+           03 CA-HOLM.
+              05 CA-M-OPCION               PIC X(01).
+           03 FILLER                       PIC X(2039).
+
+       01  CP-PROGRAMAS-HOL.
+           03 CP-PGM-MENU                  PIC X(08) VALUE 'PHOLM'.
+
+       01  CT-TRANSACCIONES-HOL.
+           03 CT-TRN-MENU                  PIC X(04) VALUE 'HOLM'.
+
+       01  CV-VARIABLES-HOL.
+           03 CV-TRANS                     PIC X(04)  VALUE SPACES.
+      *--- ZONA CICS FIN ----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       01  WI-INDICADORES.
+           03 WI-ENVIO-MAPA                PIC 9(01) VALUE ZEROS.
+              88 ENVIO-ERASE                         VALUE 1.
+              88 ENVIO-DATAONLY                      VALUE 2.
+
+       01  WL-LITERALES.
+           03 WL-FIN-SESION                PIC X(36) VALUE
+              'LA TRANSACCION HOLM HA FINALIZADO...'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+      *    CONFIGURA LA TERMINAL PARA ACEPTAR LETRAS MINUSCULAS,
+      *    SIN MAYUSCULAS FORZADAS
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                NOUCTRAN
+           END-EXEC
+
+      *    IGNORA LA CONDICION MAPFAIL EN CASO DE QUE EL USUARIO
+      *    ENVIE LA PANTALLA VACIA
+           EXEC CICS
+                IGNORE CONDITION MAPFAIL
+           END-EXEC
+
+           MOVE CT-TRN-MENU                TO CV-TRANS
+
+           IF  EIBCALEN > ZEROS
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+           END-IF
+
+           EVALUATE TRUE
+      *       NO HAY COMMAREA
+      *       INICIALIZAR COMMAREA Y MOSTRAR MAPA LIMPIO
+              WHEN EIBCALEN = ZEROS
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       HAY COMMAREA
+      *       FUE INVOCADO POR XCTL DESDE OTRO PROGRAMA, INICIALIZAR
+      *       LA COMMAREA Y MOSTRAR MAPA LIMPIO
+              WHEN EIBCALEN > ZEROS
+              AND  CA-TRANS-RETORNO NOT = SPACES
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       BORRADO DE PANTALLA, MENSAJE Y RETORNO A CICS
+              WHEN EIBAID = DFHCLEAR
+              OR   EIBAID = DFHPF3
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   PERFORM 8100-ENVIA-MENSAJE
+                   PERFORM 8900-RETORNO-CICS
+
+              WHEN EIBAID = DFHENTER
+              OR   EIBAID = DFHPF1
+              OR   EIBAID = DFHPF12
+                   PERFORM 1000-PROCESO-MAPA
+
+              WHEN OTHER
+                   PERFORM 1000-PROCESO-MAPA
+           END-EVALUATE
+
+           PERFORM 8200-RETORNO-TRANS
+           .
+       0000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    PROCESA LA PANTALLA SEGUN TECLA ELEGIDA POR EL USUARIO
+      *----------------------------------------------------------------
+       1000-PROCESO-MAPA.
+           PERFORM 8400-RECIBE-MAPA
+
+           EVALUATE TRUE
+      *       ENTER: VALIDAMOS EL MAPA Y SI ES CORRECTO PROCESO ENTER
+              WHEN EIBAID = DFHENTER
+                   CONTINUE
+
+      *       F1: SE LLAMA AL PROGRAMA DE AYUDA ONLINE
+              WHEN EIBAID = DFHPF1
+                   CONTINUE
+
+      *       F12 : LLAMAMOS AL PROGRAMA DE LISTAS Y SELECCION
+              WHEN EIBAID = DFHPF12
+                   CONTINUE
+
+      *       OTRAS: SE AVISA CON MENSAJE EN PANTALLA Y MAPA LIMPIO
+              WHEN OTHER
+                   MOVE 'TECLA ERRONEA...' TO MSGO
+           END-EVALUATE.
+
+           SET ENVIO-DATAONLY              TO TRUE
+           PERFORM 8000-ENVIO-MAPA
+           .
+       1000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA EL MAPA AL TERMINAL SERGUN MODO DEL INDICADOR
+      *----------------------------------------------------------------
+       8000-ENVIO-MAPA.
+           EVALUATE TRUE
+              WHEN ENVIO-ERASE
+                   EXEC CICS
+                        SEND MAP    ('HOLMMP')
+                             MAPSET ('HOLMMP')
+                             FROM   (HOLMMPO)
+                             ERASE
+                   END-EXEC
+              WHEN ENVIO-DATAONLY
+                   EXEC CICS
+                        SEND MAP    ('HOLMMP')
+                             MAPSET ('HOLMMP')
+                             FROM   (HOLMMPO)
+                             DATAONLY
+                   END-EXEC
+           END-EVALUATE
+           .
+       8000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA UN MENSAJE AL TERMINAL DEL USUARIO (FIN SESION)
+      *----------------------------------------------------------------
+       8100-ENVIA-MENSAJE.
+           EXEC CICS
+                SEND TEXT
+                     FROM (WL-FIN-SESION)
+                     ERASE
+                     FREEKB
+           END-EXEC
+           .
+       8100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A UNA TRANSACCION
+      *----------------------------------------------------------------
+       8200-RETORNO-TRANS.
+           EXEC CICS
+                RETURN
+                TRANSID  (CV-TRANS)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+           END-EXEC
+           .
+       8200-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    RECIBE EL MAPA DE LA TAREA
+      *----------------------------------------------------------------
+       8400-RECIBE-MAPA.
+           EXEC CICS
+                RECEIVE
+                MAP    ('HOLMMP')
+                MAPSET ('HOLMMP')
+                INTO   (HOLMMPI)
+           END-EXEC
+           .
+       8400-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A CICS - SALIDA TOTAL
+      *----------------------------------------------------------------
+       8900-RETORNO-CICS.
+      *    CONFIGURA LA CONVERSION AUTOMATICA A MAYUSCULAS
+      *    EN LA TERMINAL ACTUAL DEL USUARIO
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       8900-EXIT.
+           EXIT.

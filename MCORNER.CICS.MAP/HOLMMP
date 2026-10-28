@@ -103,7 +103,6 @@ CUR4     DFHMDF POS=(10,17),                                           X
                ATTRB=(PROT,NORM),                                      X
                COLOR=BLUE,                                             X
                INITIAL='OPCION:'
-*
 OPC      DFHMDF POS=(13,29),                                           X
                LENGTH=01,                                              X
                ATTRB=(UNPROT,FSET,NUM,IC),                             X
@@ -111,7 +110,6 @@ OPC      DFHMDF POS=(13,29),                                           X
                PICIN='9',                                              X
                PICOUT='Z',                                             X
                HILIGHT=UNDERLINE
-*
          DFHMDF POS=(13,31),                                           X
                LENGTH=01,                                              X
                ATTRB=ASKIP

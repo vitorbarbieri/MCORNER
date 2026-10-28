@@ -1,0 +1,46 @@
+       01  CA-COMMAREA-HOL.
+           03 CA-COMUN.
+              05 CA-TRANS                  PIC X(04).
+              05 CA-TRANS-RETORNO          PIC X(04).
+              05 CA-PROG-RETORNO           PIC X(08).
+              05 CA-XCTL                   PIC X(08).
+           03 CA-HOLE.
+              05 CA-E-TRANSACCION          PIC X(04).
+              05 CA-E-PROGRAMA             PIC X(08).
+              05 CA-E-PARRAFO              PIC X(30).
+              05 CA-E-ACCION               PIC X(20).
+              05 CA-E-CODIGO               PIC X(10).
+              05 CA-E-MENSAJE              PIC X(50).
+           03 CA-HOLM.
+              05 CA-M-OPCION               PIC X(01).
+           03 CA-HOLX.
+              05 CA-X-ACCION               PIC X(01).
+              05 CA-X-DNI                  PIC X(09).
+           03 FILLER                       PIC X(1891).
+
+       01  CP-PROGRAMAS-HOL.
+           03 CP-PGM-MENU                  PIC X(08)  VALUE 'PHOLM'.
+           03 CP-PGM-MANTENIMIENTO         PIC X(08)  VALUE 'PHOLX'.
+           03 CP-PGM-ERROR                 PIC X(08)  VALUE 'PHOLE'.
+
+       01  CT-TRANSACCIONES-HOL.
+           03 CT-TRN-MENU                  PIC X(04)  VALUE 'HOLM'.
+           03 CT-TRN-MANTENIMIENTO         PIC X(04)  VALUE 'HOLX'.
+           03 CT-TRN-ERROR                 PIC X(04)  VALUE 'HOLE'.
+
+       01  CV-VARIABLES-HOL.
+           03 CV-TRANS                     PIC X(04)  VALUE SPACES.
+           03 CV-PROG                      PIC X(08)  VALUE SPACES.
+           03 CV-PARRAFO                   PIC X(30)  VALUE SPACES.
+           03 CV-ACCION                    PIC X(20)  VALUE SPACES.
+           03 CV-CODIGO                    PIC X(10)  VALUE SPACES.
+           03 CV-MENSAJE                   PIC X(50)  VALUE SPACES.
+           03 CV-RESP-CICS                 PIC S9(08) COMP VALUE ZEROS.
+           03 CV-RESP2-CICS                PIC S9(08) COMP VALUE ZEROS.
+           03 CV-RESP-LIMPIO               PIC X(20)  VALUE SPACES.
+           03 CV-RESP2-LIMPIO              PIC X(20)  VALUE SPACES.
+           03 CV-CAMPO-ENTRADA             PIC X(20)  VALUE SPACES.
+           03 CV-CAMPO-SALIDA              PIC X(20)  VALUE SPACES.
+           03 CV-ENCONTRADO                PIC X(01)  VALUE SPACES.
+           03 CV-I                         PIC 9(02)  VALUE ZEROS.
+           03 CV-J                         PIC 9(02)  VALUE ZEROS.

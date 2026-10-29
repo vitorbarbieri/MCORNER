@@ -4,6 +4,14 @@
               05 CA-TRANS-RETORNO          PIC X(04).
               05 CA-PROG-RETORNO           PIC X(08).
               05 CA-XCTL                   PIC X(08).
+              05 CA-LINK                   PIC X(08).
+           03 CA-PTITULO.
+              05 CA-RESUL                  PIC X(02).
+              05 CA-TABLA                  PIC X(08).
+              05 CA-CLAVE1                 PIC X(08).
+              05 CA-CLAVE2                 PIC X(08).
+              05 CA-CLAVE3                 PIC X(08).
+              05 CA-VALOR                  PIC X(80).
            03 CA-HOLE.
               05 CA-E-TRANSACCION          PIC X(04).
               05 CA-E-PROGRAMA             PIC X(08).
@@ -16,12 +24,14 @@
            03 CA-HOLX.
               05 CA-X-ACCION               PIC X(01).
               05 CA-X-DNI                  PIC X(09).
-           03 FILLER                       PIC X(1891).
+           03 FILLER                       PIC X(1769).
 
        01  CP-PROGRAMAS-HOL.
            03 CP-PGM-MENU                  PIC X(08)  VALUE 'PHOLM'.
            03 CP-PGM-MANTENIMIENTO         PIC X(08)  VALUE 'PHOLX'.
            03 CP-PGM-ERROR                 PIC X(08)  VALUE 'PHOLE'.
+           03 CP-PGM-CENTER                PIC X(08)  VALUE 'PCENT'.
+           03 CP-PGM-TABLA-TITULO          PIC X(08)  VALUE 'PTITULO'.
 
        01  CT-TRANSACCIONES-HOL.
            03 CT-TRN-MENU                  PIC X(04)  VALUE 'HOLM'.
@@ -44,3 +54,19 @@
            03 CV-ENCONTRADO                PIC X(01)  VALUE SPACES.
            03 CV-I                         PIC 9(02)  VALUE ZEROS.
            03 CV-J                         PIC 9(02)  VALUE ZEROS.
+           03 CV-LONGITUD-TITULO           PIC 9(02)  VALUE 74.
+
+       01  DB2-AREA.
+           03 DB2-CODE                     PIC S9(09) VALUE ZEROS.
+           03 DB2-CODE-EDIT                PIC --------9.
+           03 DB2-CODE-X                   PIC X(10)  VALUE SPACES.
+           03 DB2-ERROR-MSG                PIC X(50)  VALUE SPACES.
+           03 DB2-IDIOMA                   PIC X(02)  VALUE 'ES'.
+           03 DB2-TABLA                    PIC X(08)  VALUE SPACES.
+           03 DB2-CLAVE1                   PIC X(08)  VALUE SPACES.
+           03 DB2-CLAVE2                   PIC X(08)  VALUE SPACES.
+           03 DB2-CLAVE3                   PIC X(08)  VALUE SPACES.
+           03 DB2-VALOR                    PIC X(80)  VALUE SPACES.
+           03 DB2-TABLA-TITULOS            PIC X(08)  VALUE 'TITULMAP'.
+           03 DB2-COUNT1                   PIC S9(09) COMP-3 VALUE ZERO.
+           03 DB2-COUNT2                   PIC S9(09) COMP-3 VALUE ZERO.

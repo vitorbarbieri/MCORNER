@@ -1,6 +1,6 @@
 DSN SYSTEM(DB9G)
-   BIND PLAN (PHOLM)                    -
-        MEM (PHOLM)                     -
+   BIND PLAN (PTITULO)                  -
+        MEM (PTITULO)                   -
         ENCODING (284)                  -
         LIBRARY ('MCORNER.DB2.DBRMLIB') -
         RELEASE (COMMIT)                -

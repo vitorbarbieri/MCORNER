@@ -1,0 +1,192 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. PTITULO.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ...........: HOL                                  *
+      *    PROGRAMA ...........: PTITULO                              *
+      *    VERSION ............: 1.0                                  *
+      *    TITULO .............: CICS LINK PARA LEER TITULO DE MAPA   *
+      *                                                               *
+      *    TIPO ...............:                                      *
+      *    - LENGUAJE .........: COBOL                                *
+      *    - ENTORNO ..........: CICS                                 *
+      *    - BASE DE DATOS ....: DB2                                  *
+      *                                                               *
+      *    DESCRIPCION ........:                                      *
+      *    - RECIBE  POR COMMAREA LOS VALORES PARA ACCEDER A LA       *
+      *      TABLA DB2 LLAMADA TABLAS Y RECUPERAR LOS DATOS DE UN     *
+      *      REGISTRO.                                                *
+      *    - LA TABLA ES 'TITULMAP'                                   *
+      *    - CLAVE1 ES EL CODIGO DE TRANSACCION                       *
+      *    - CLAVE2 ES NULO O ESPACIOS                                *
+      *    - CLAVE3 ES 'ES' (PREPARAR LAS COSAS PARA MULTI-IDIOMA)    *
+      *    - DEVUELVE EL VALOR ENCONTRADO EN COMMAREA                 *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-10-28 CREACION DEL PROGRAMA PTITULO                   *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA DB2 --------------------------------------------------
+           EXEC SQL
+                INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+                INCLUDE TABLAS
+           END-EXEC.
+      *--- ZONA DB2 FIN ----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       COPY HOLWS.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+           IF  EIBCALEN > 0
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+               PERFORM 1000-PROCESO
+           ELSE
+               MOVE '01'                   TO CA-RESUL
+               MOVE 'INTRODUZCA LOS DATOS DE ENTRADA' TO CA-VALOR
+           END-IF
+
+           MOVE CA-COMMAREA-HOL            TO DFHCOMMAREA
+           PERFORM 8900-RETORNO-CICS
+           .
+       0000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       1000-PROCESO.
+           PERFORM 1100-RECUPERA-DATOS
+           PERFORM 7200-DB2-CONSULTA
+
+           EVALUATE TRUE
+              WHEN SQLCODE = ZEROS
+                   MOVE TB-VALOR           TO CA-VALOR
+                   MOVE '00'               TO CA-RESUL
+              WHEN SQLCODE = +100
+                   MOVE 'EL MAPA NO TIENE TITULO EN TABLAS' TO CA-VALOR
+                   MOVE '01'               TO CA-RESUL
+              WHEN SQLCODE NOT = ZEROS
+              AND  SQLCODE NOT = +100
+                   MOVE SQLERRMC           TO CA-VALOR
+                   MOVE '99'               TO CA-RESUL
+           END-EVALUATE
+           .
+       0000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    RECUPERA LOS DATOS DE LA COMMAREA PARA ESTE PROGRAMA
+      *----------------------------------------------------------------
+       1100-RECUPERA-DATOS.
+           PERFORM 1110-NO-ESPACIOS
+
+           MOVE CA-TABLA                   TO TB-TABLA
+           MOVE CA-CLAVE1                  TO TB-CLAVE1
+           MOVE CA-CLAVE2                  TO TB-CLAVE2
+           MOVE CA-CLAVE3                  TO TB-CLAVE3
+           .
+       1100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    PROTEGE LA POSIBILIDAD DE HABER CAMPOS CON ESPACIOS
+      *    O NULL. LA TABLA DB2 SE HA DECLARADO SIN DEFAULTS
+      *----------------------------------------------------------------
+       1110-NO-ESPACIOS.
+           IF  CA-TABLA = SPACES
+           OR  CA-TABLA = HIGH-VALUES
+               MOVE LOW-VALUES             TO CA-TABLA
+           END-IF
+
+           IF  CA-CLAVE1 = SPACES
+           OR  CA-CLAVE1 = HIGH-VALUES
+               MOVE LOW-VALUES             TO CA-CLAVE1
+           END-IF
+
+           IF  CA-CLAVE2 = SPACES
+           OR  CA-CLAVE2 = HIGH-VALUES
+               MOVE LOW-VALUES             TO CA-CLAVE2
+           END-IF
+
+           IF  CA-CLAVE3 = SPACES
+           OR  CA-CLAVE3 = HIGH-VALUES
+               MOVE LOW-VALUES             TO CA-CLAVE3
+           END-IF
+           .
+       1110-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    CONSULTA EN DB2
+      *----------------------------------------------------------------
+       7200-DB2-CONSULTA.
+           EXEC SQL
+                SELECT TABLA,
+                       CLAVE1,
+                       CLAVE2,
+                       CLAVE3,
+                       VALOR
+                  INTO :TB-TABLA,
+                       :TB-CLAVE1,
+                       :TB-CLAVE2,
+                       :TB-CLAVE3,
+                       :TB-VALOR
+                  FROM MCORNER.TABLAS
+                 WHERE TABLA  = :TB-TABLA
+                   AND CLAVE1 = :TB-CLAVE1
+                   AND CLAVE2 = :TB-CLAVE2
+                   AND CLAVE3 = :TB-CLAVE3
+           END-EXEC
+           .
+       7200-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A CICS - SALIDA TOTAL RETORNO
+      *----------------------------------------------------------------
+       8900-RETORNO-CICS.
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       8900-EXIT.
+           EXIT.

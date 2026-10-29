@@ -28,10 +28,9 @@ TRN      DFHMDF POS=(01,01),                                           X
                INITIAL='HOLM'
 *
 TITLE    DFHMDF POS=(01,26),                                           X
-               LENGTH=27,                                              X
+               LENGTH=74,                                              X
                ATTRB=(PROT,BRT),                                       X
-               COLOR=NEUTRAL,                                          X
-               INITIAL='MENU DE GESTION DE CLIENTES'
+               COLOR=NEUTRAL
 *
          DFHMDF POS=(02,01),                                           X
                LENGTH=78,                                              X

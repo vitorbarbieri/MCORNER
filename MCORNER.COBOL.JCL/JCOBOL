@@ -1,0 +1,47 @@
+//JCOBOL   JOB MCORNER,'COBOL-CALL',NOTIFY=&SYSUID,
+//         MSGCLASS=A,CLASS=A,MSGLEVEL=(1,1),REGION=0M
+//*
+//* JCL PARA COMPILAR PROGRAMAS COBOL
+//* VERSION 1.0
+//*
+//*================================================================
+//*
+//SETP     SET PGM=PCENT
+//*
+//*----------------------------------------------------------------
+//*        COBOL COMPILER
+//*----------------------------------------------------------------
+//COB      EXEC PGM=IGYCRCTL,REGION=8M,
+//         PARM=(APOST,LIB,XREF,MAP,RENT,BUF(32760),DYNAM,
+//         SSRANGE,OFFSET,TRUNC(OPT))
+//*
+//STEPLIB  DD DSN=IGY420.SIGYCOMP,DISP=SHR
+//SYSLIB   DD DSN=MCORNER.COBOL.SOURCE,DISP=SHR
+//         DD DSN=MCORNER.COBOL.COPYS,DISP=SHR
+//SYSIN    DD DSN=MCORNER.COBOL.SOURCE(&PGM),DISP=SHR
+//SYSLIN   DD DSN=&&LOADSET,DISP=(NEW,PASS),UNIT=SYSDA,
+//         SPACE=(800,(500,500))
+//SYSUT1   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT2   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT3   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT4   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT5   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT6   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT7   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSPRINT DD SYSOUT=A
+//SYSOUT   DD SYSOUT=A
+//*
+//*----------------------------------------------------------------
+//*        LINK EDITION
+//*----------------------------------------------------------------
+//LKED     EXEC PGM=HEWL,REGION=8M,
+//         PARM='LIST,XREF,CALL,AMODE=31,RMODE=ANY',
+//         COND=(0,NE,COB)
+//*
+//SYSLIB   DD DSN=CEE.SCEELKED,DISP=SHR
+//SYSLIN   DD DSN=&&LOADSET,DISP=(OLD,DELETE)
+//SYSLMOD  DD DSN=MCORNER.COBOL.LOAD(&PGM),DISP=SHR
+//SYSUT1   DD UNIT=SYSDA,DCB=BLKSIZE=1024,SPACE=(1024,(200,20))
+//SYSPRINT DD SYSOUT=A
+//SYSOUT   DD SYSOUT=A
+//*

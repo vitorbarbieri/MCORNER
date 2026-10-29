@@ -11,7 +11,7 @@
            02  FILLER REDEFINES TITLEF.
              03 TITLEA    PICTURE X.
            02  FILLER   PICTURE X(5).
-           02  TITLEI  PIC X(27).
+           02  TITLEI  PIC X(74).
            02  CUR1L    COMP  PIC  S9(4).
            02  CUR1F    PICTURE X.
            02  FILLER REDEFINES CUR1F.
@@ -63,7 +63,7 @@
            02  TITLEH    PICTURE X.
            02  TITLEV    PICTURE X.
            02  TITLEU    PICTURE X.
-           02  TITLEO  PIC X(27).
+           02  TITLEO  PIC X(74).
            02  FILLER PICTURE X(3).
            02  CUR1C    PICTURE X.
            02  CUR1P    PICTURE X.

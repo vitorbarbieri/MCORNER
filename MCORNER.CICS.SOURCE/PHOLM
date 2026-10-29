@@ -26,6 +26,7 @@
       *    LOG DE MODIFICACIONES:                                     *
       *    FECHA----- DESCRIPCION------------------------------------ *
       *    2026-10-26 CREACION DEL PROGRAMA PHOLM                     *
+      *    2026-10-29 BUSCAR TITULO EN LA TABLA 'TABLAS'              *
       *                                                               *
       *****************************************************************
 
@@ -77,6 +78,10 @@
            03 WL-FIN-SESION                PIC X(36)  VALUE
               'LA TRANSACCION HOLM HA FINALIZADO...'.
       *--- ZONA WORKING FIN -------------------------------------------
+
+      *--- ZONA CALLS -------------------------------------------------
+       COPY LKCENT.
+      *--- ZONA CALLS FIN ---------------------------------------------
 
        LINKAGE SECTION.
 
@@ -173,7 +178,6 @@
       *       OTRAS: SE AVISA CON MENSAJE EN PANTALLA Y MAPA LIMPIO
               WHEN OTHER
                    MOVE 'TECLA ERRONEA'    TO MSGO
-                   MOVE DFHRED             TO OPCC
            END-EVALUATE.
 
            SET ENVIO-DATAONLY              TO TRUE
@@ -189,6 +193,7 @@
            INITIALIZE                      CA-HOLM
            INITIALIZE                      CA-HOLX
            INITIALIZE                      CA-HOLE
+           INITIALIZE                      CA-PTITULO
 
            MOVE EIBCPOSN                   TO WC-CURPOS
            MOVE OPCI                       TO WC-OPCION
@@ -315,6 +320,8 @@
        8000-ENVIO-MAPA.
            EVALUATE TRUE
               WHEN ENVIO-ERASE
+                   PERFORM 8300-TITULO-MAPA
+
                    EXEC CICS
                         SEND MAP    ('HOLMMP')
                              MAPSET ('HOLMMP')
@@ -362,6 +369,34 @@
            EXIT.
 
       *----------------------------------------------------------------
+      *    RECUPERAR EL TITULO DEL MAPA                   TABLA: TABLAS
+      *----------------------------------------------------------------
+       8300-TITULO-MAPA.
+           MOVE DB2-TABLA-TITULOS          TO CA-TABLA
+           MOVE CV-TRANS                   TO CA-CLAVE1
+           MOVE LOW-VALUES                 TO CA-CLAVE2
+           MOVE DB2-IDIOMA                 TO CA-CLAVE3
+           MOVE CP-PGM-TABLA-TITULO        TO CA-LINK
+           PERFORM 8500-LINK-PROGRAMA
+
+           EVALUATE TRUE
+              WHEN CA-RESUL = '00'
+              OR   CA-RESUL = '01'
+                   MOVE CA-VALOR           TO LK-BUFFER-ENTRADA
+                   MOVE CV-LONGITUD-TITULO TO LK-LONGITUD-RESULTADO
+                   CALL CP-PGM-CENTER USING LK-CENT
+                   MOVE LK-BUFFER-ENTRADA  TO TITLEO
+              WHEN CA-RESUL = '99'
+                   MOVE '8300-TITULO-MAPA' TO CV-PARRAFO
+                   MOVE 'LINK'             TO CV-ACCION
+                   MOVE 'ERROR AL BUSCAR TITULO' TO CV-MENSAJE
+                   PERFORM 9999-ERROR-COBOL
+           END-EVALUATE
+           .
+       8300-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
       *    RECIBE EL MAPA DE LA TAREA
       *----------------------------------------------------------------
        8400-RECIBE-MAPA.
@@ -373,6 +408,48 @@
            END-EXEC
            .
        8400-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    LLAMA A OTRO PROGRAMA CICS POR LINK CON COMMAREA
+      *----------------------------------------------------------------
+       8500-LINK-PROGRAMA.
+           EXEC CICS
+                LINK
+                PROGRAM  (CA-LINK)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (CV-RESP-CICS)
+                RESP2    (CV-RESP2-CICS)
+           END-EXEC
+
+           IF  CV-RESP-CICS NOT = DFHRESP(NORMAL)
+               MOVE '8500-LINK-PROGRAMA'   TO CV-PARRAFO
+               MOVE 'LINK'                 TO CV-ACCION
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP-CICS       TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP-LIMPIO
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP2-CICS      TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP2-LIMPIO
+
+               STRING CV-RESP-LIMPIO  DELIMITED BY SPACE
+                      '/'             DELIMITED BY SIZE
+                      CV-RESP2-LIMPIO DELIMITED BY SPACE
+                                       INTO CV-CODIGO
+
+               STRING 'ERROR AL LLAMAR PROGRAMA ' DELIMITED BY SIZE
+                      CA-LINK                     DELIMITED BY SPACE
+                                       INTO CV-MENSAJE
+
+               PERFORM 9999-ERROR-CICS
+           END-IF
+           .
+       8500-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -412,7 +489,9 @@
                       CV-RESP2-LIMPIO DELIMITED BY SPACE
                                        INTO CV-CODIGO
 
-               MOVE 'ERROR AL CAMBIAR DE PROGRAMA' TO CV-MENSAJE
+               STRING 'ERROR AL CAMBIAR DE PROGRAMA ' DELIMITED BY SIZE
+                      CA-XCTL                         DELIMITED BY SPACE
+                                       INTO CV-MENSAJE
 
                PERFORM 9999-ERROR-CICS
            END-IF
@@ -470,12 +549,30 @@
       *    ERROR DE CICS EN ALGUNA PARTE DEL CODIGO COBOL
       *----------------------------------------------------------------
        9999-ERROR-CICS.
-      *
            MOVE CV-TRANS                TO CA-E-TRANSACCION
            MOVE CV-PROG                 TO CA-E-PROGRAMA
            MOVE CV-PARRAFO              TO CA-E-PARRAFO
            MOVE CV-ACCION               TO CA-E-ACCION
            MOVE CV-CODIGO               TO CA-E-CODIGO
+           MOVE CV-MENSAJE              TO CA-E-MENSAJE
+           MOVE CP-PGM-ERROR            TO CA-XCTL
+           MOVE CV-TRANS                TO CA-TRANS-RETORNO
+           MOVE CV-PROG                 TO CA-PROG-RETORNO
+
+           PERFORM 8700-XCTL-PROGRAMA
+           .
+       9999-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ERROR DE COBOL EN ALGUNA PARTE DEL CODIGO COBOL
+      *----------------------------------------------------------------
+       9999-ERROR-COBOL.
+           MOVE CV-TRANS                TO CA-E-TRANSACCION
+           MOVE CV-PROG                 TO CA-E-PROGRAMA
+           MOVE CV-PARRAFO              TO CA-E-PARRAFO
+           MOVE CV-ACCION               TO CA-E-ACCION
+           MOVE -999999999              TO CA-E-CODIGO
            MOVE CV-MENSAJE              TO CA-E-MENSAJE
            MOVE CP-PGM-ERROR            TO CA-XCTL
            MOVE CV-TRANS                TO CA-TRANS-RETORNO

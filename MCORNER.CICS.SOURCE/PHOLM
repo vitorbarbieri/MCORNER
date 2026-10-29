@@ -178,6 +178,7 @@
       *       OTRAS: SE AVISA CON MENSAJE EN PANTALLA Y MAPA LIMPIO
               WHEN OTHER
                    MOVE 'TECLA ERRONEA'    TO MSGO
+                   MOVE DFHGREEN           TO OPCC
            END-EVALUATE.
 
            SET ENVIO-DATAONLY              TO TRUE

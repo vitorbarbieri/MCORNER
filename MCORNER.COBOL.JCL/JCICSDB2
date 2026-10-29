@@ -1,0 +1,116 @@
+//JCICSDB2 JOB MCORNER,'COMP-CICS-DB2',NOTIFY=&SYSUID,
+//            MSGCLASS=A,CLASS=A,MSGLEVEL=(1,1),REGION=0M
+//*
+//* JCL PARA COMPILAR PROGRAMAS COBOL CON CICS Y DB2
+//* VERSION 1.0
+//*
+//*================================================================
+//*
+//SETPG   SET PGM=PTITULO
+//*
+//*----------------------------------------------------------------
+//*        DB2 PRECOMPILE
+//*----------------------------------------------------------------
+//*
+//DB2      EXEC PGM=DSNHPC,
+//         PARM='HOST(IBMCOB),XREF,SOURCE,FLAG(W),APOST',
+//         REGION=8M
+//*
+//STEPLIB  DD DISP=SHR,DSN=DSN910.DB9G.SDSNEXIT
+//         DD DISP=SHR,DSN=DSN910.SDSNLOAD
+//SYSIN    DD DSN=MCORNER.CICS.SOURCE(&PGM),DISP=SHR
+//DBRMLIB  DD DSN=MCORNER.DB2.DBRMLIB(&PGM),DISP=SHR
+//SYSCIN   DD DSN=&&DSNHOUT,DISP=(MOD,PASS),
+//         UNIT=SYSDA,SPACE=(800,(400,400),,,ROUND)
+//SYSLIB   DD DSN=MCORNER.COBOL.COPYS,DISP=SHR
+//         DD DSN=MCORNER.DB2.DCLGEN,DISP=SHR
+//         DD DSN=MCORNER.CICS.SOURCE,DISP=SHR
+//         DD DSN=DFH410.CICS.SDFHCOB,DISP=SHR
+//SYSPRINT DD SYSOUT=A
+//SYSTERM  DD SYSOUT=A
+//SYSUT1   DD SPACE=(CYL,(5,1)),UNIT=SYSDA
+//SYSUT2   DD SPACE=(CYL,(5,1)),UNIT=SYSDA
+//*
+//*----------------------------------------------------------------
+//*        CICS TRANSLATOR
+//*----------------------------------------------------------------
+//*
+//CICS     EXEC PGM=DFHECP1$,REGION=8M,
+//         PARM=(COBOL3,NOSOURCE,SP),
+//         COND=(0,NE,DB2)
+//*
+//STEPLIB  DD DISP=SHR,DSN=DFH410.CICS.SDFHLOAD
+//DSCTLIB  DD DISP=SHR,DSN=DFH410.CICS.SDFHCOB
+//SYSIN    DD DSN=&&DSNHOUT,DISP=(OLD,DELETE)
+//SYSPUNCH DD DISP=(NEW,PASS),DSN=&&CICSOUT0,UNIT=SYSDA,
+//         SPACE=(800,(500,500)),DCB=BLKSIZE=400
+//SYSPRINT DD SYSOUT=A
+//SYSOUT   DD SYSOUT=A
+//*
+//*----------------------------------------------------------------
+//*        COBOL COMPILER
+//*----------------------------------------------------------------
+//*
+//COB      EXEC PGM=IGYCRCTL,REGION=8M,
+//         PARM=(APOST,LIB,DYNAM)
+//*
+//STEPLIB  DD DSN=IGY420.SIGYCOMP,DISP=SHR
+//         DD DSN=DFH410.CICS.SDFHLOAD,DISP=SHR
+//SYSLIB   DD DSN=DFH410.CICS.SDFHCOB,DISP=SHR
+//*
+//         DD DSN=MCORNER.CICS.SOURCE,DISP=SHR
+//         DD DSN=MCORNER.COBOL.COPYS,DISP=SHR
+//         DD DSN=MCORNER.CICS.MAP,DISP=SHR
+//         DD DSN=MCORNER.DB2.DCLGEN,DISP=SHR
+//SYSPRINT DD SYSOUT=A
+//SYSIN    DD DSN=&&CICSOUT0,DISP=(OLD,DELETE)
+//SYSLIN   DD DSN=&&LOADSET,DISP=(NEW,PASS),UNIT=SYSDA,
+//         SPACE=(800,(500,500))
+//SYSUT1   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT2   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT3   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT4   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT5   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT6   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//SYSUT7   DD UNIT=SYSDA,SPACE=(460,(350,100))
+//*
+//*----------------------------------------------------------------
+//*        LINK EDITION
+//*----------------------------------------------------------------
+//*
+//LKED     EXEC PGM=IEWL,REGION=8M,
+//         PARM='LIST,XREF,CALL,AMODE=31,RMODE=ANY',
+//         COND=((0,NE,DB2),(0,NE,CICS),(0,NE,COB))
+//*
+//SYSLIB   DD DSN=DFH410.CICS.SDFHLOAD,DISP=SHR
+//         DD DSN=CEE.SCEELKED,DISP=SHR
+//         DD DSN=DSN910.DB9G.SDSNEXIT,DISP=SHR
+//         DD DSN=DSN910.SDSNLOAD,DISP=SHR
+//         DD DSN=TCPIP.SEZATCP,DISP=SHR
+//         DD DISP=SHR,DSN=ISP.SISPLOAD
+//         DD DISP=SHR,DSN=GDDM.SADMMOD
+//SYSLMOD  DD DSN=MCORNER.CICS.LOAD(&PGM),DISP=SHR
+//SYSUT1   DD UNIT=SYSDA,DCB=BLKSIZE=1024,
+//         SPACE=(1024,(200,20))
+//SYSPRINT DD SYSOUT=A
+//SYSLIN   DD *
+  INCLUDE SYSLIB(DSNCLI)
+//         DD DSN=&&LOADSET,DISP=(OLD,DELETE)
+//*        DD DDNAME=SYSIN
+//*
+//*----------------------------------------------------------------
+//*        BIND PLAN
+//*----------------------------------------------------------------
+//*
+//DB2BIND  EXEC PGM=IKJEFT01,DYNAMNBR=20,
+//         COND=((0,NE,DB2),(0,NE,CICS),(0,NE,COB),(0,NE,LKED))
+//*
+//STEPLIB  DD DSN=DSN910.SDSNLOAD,DISP=SHR
+//         DD DSN=DSN910.DB9G.SDSNEXIT,DISP=SHR
+//         DD DSN=DSN910.DB9G.RUNLIB.LOAD,DISP=SHR
+//DBRMLIB  DD DSN=MCORNER.DB2.DBRMLIB,DISP=SHR
+//SYSTSPRT DD SYSOUT=A
+//SYSPRINT DD SYSOUT=A
+//SYSUDUMP DD SYSOUT=A
+//SYSTSIN  DD DSN=MCORNER.DB2.BIND(&PGM),DISP=SHR
+//*

@@ -1,0 +1,68 @@
+//JCICS    JOB MCORNER,'COMP-CICS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),
+//         NOTIFY=&SYSUID
+//*
+//* JCL PARA COMPILAR PROGRAMAS COBOL CON CICS
+//* VERSION 1.0
+//*
+//*================================================================
+//*
+//SETP     SET  PRG=PHOLM
+//*
+//*----------------------------------------------------------------
+//*        CICS TRANSLATOR
+//*----------------------------------------------------------------
+//CICS     EXEC PGM=DFHECP1$,REGION=8M,
+//         PARM=(COBOL3,NOSOURCE,SP)
+//*
+//STEPLIB  DD DISP=SHR,DSN=DFH410.CICS.SDFHLOAD
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSPUNCH DD DISP=(NEW,PASS),DSN=&&CICSOUT0,UNIT=SYSDA,
+//         SPACE=(800,(500,500)),DCB=BLKSIZE=400
+//SYSIN    DD DSN=MCORNER.CICS.SOURCE(&PRG),DISP=SHR
+//*
+//*----------------------------------------------------------------
+//*        COBOL COMPILER
+//*----------------------------------------------------------------
+//*
+//COB      EXEC PGM=IGYCRCTL,REGION=8M,
+//         PARM=(APOST,LIB,XREF,MAP,RENT,BUF(32760),
+//         SSRANGE,OFFSET,TRUNC(OPT)),
+//         COND=(0,NE,CICS)
+//*
+//STEPLIB  DD DSN=IGY420.SIGYCOMP,DISP=SHR
+//SYSIN    DD DSN=&&CICSOUT0,DISP=(OLD,DELETE)
+//SYSLIB   DD DSN=DFH410.CICS.SDFHCOB,DISP=SHR
+//         DD DSN=MCORNER.COBOL.COPYS,DISP=SHR
+//SYSLIN   DD DSN=&&LOADSET,DISP=(NEW,PASS),UNIT=SYSDA,
+//         SPACE=(800,(500,500))
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSUT1   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT2   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT3   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT4   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT5   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT6   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//SYSUT7   DD SPACE=(800,(500,500),,,ROUND),UNIT=SYSDA
+//*
+//*----------------------------------------------------------------
+//*        LINK EDITION
+//*----------------------------------------------------------------
+//*
+//LKEDITA  EXEC PGM=IEWL,PARM='LIST,XREF,CALL,AMODE=31,RMODE=ANY',
+//         REGION=8M,COND=((0,NE,CICS),(0,NE,COB))
+//*
+//SYSLIB   DD DSN=CEE.SCEELKED,DISP=SHR
+//         DD DSN=DFH410.CICS.SDFHLOAD,DISP=SHR
+//         DD DSN=DFH410.CICS.SDFHEXCI,DISP=SHR
+//         DD DSN=SYS1.LINKLIB,DISP=SHR
+//         DD DSN=TCPIP.SEZATCP,DISP=SHR
+//SYSLIN   DD DSN=DFH410.CICS.SDFHCOB(DFHEILIC),DISP=SHR
+//         DD DSN=&&LOADSET,DISP=(OLD,DELETE)
+//         DD DDNAME=SYSIN
+//SYSLMOD  DD DISP=SHR,DSN=MCORNER.CICS.LOAD(&PRG)
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSUT1   DD SPACE=(1024,(500,500)),UNIT=SYSDA
+//*

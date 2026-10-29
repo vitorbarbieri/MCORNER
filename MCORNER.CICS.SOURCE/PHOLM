@@ -1,0 +1,585 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. PHOLM.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ...........: HOL                                  *
+      *    PROGRAMA ...........: PHOLM                                *
+      *    VERSION ............: 1.0                                  *
+      *    TITULO .............: MENU GENERAL DE CLIENTES             *
+      *                                                               *
+      *    TIPO ...............:                                      *
+      *    - LENGUAJE .........: COBOL                                *
+      *    - ENTORNO ..........: CICS                                 *
+      *    - BASE DE DATOS ....: DB2                                  *
+      *                                                               *
+      *    DESCRIPCION ........:                                      *
+      *    - MENU PRINCIPAL PARA LA GESTION DE CLIENTES. PERMITE      *
+      *      SELECCIONAR UNA DE LAS SIGUIENTES OPCIONES: (A) ALTA,    *
+      *      (B) BAJA, (C) CONSULTA O (M) MODIFICACION, E INVOCAR     *
+      *      EL PROGRAMA CORRESPONDIENTE PARA REALIZAR LA OPERACION   *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-10-26 CREACION DEL PROGRAMA PHOLM                     *
+      *    2026-10-29 BUSCAR TITULO EN LA TABLA 'TABLAS'              *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA CICS --------------------------------------------------
+       COPY DFHAID.
+       COPY DFHBMSCA.
+       COPY HOLMMP.
+      *--- ZONA CICS FIN ----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       COPY HOLWS.
+
+       01  WC-CONSTANTES.
+           03 WC-CURPOS                    PIC S9(04) COMP VALUE ZEROS.
+              88 CUR-CONSULTA                         VALUE +497.
+              88 CUR-ALTA                             VALUE +577.
+              88 CUR-MODIFICACION                     VALUE +657.
+              88 CUR-BAJA                             VALUE +737.
+           03 WC-OPCION                    PIC X(01)  VALUE SPACES.
+              88 CONSULTA                             VALUE '1'.
+              88 ALTA                                 VALUE '2'.
+              88 MODIFICACION                         VALUE '3'.
+              88 BAJA                                 VALUE '4'.
+
+       01  WI-INDICADORES.
+           03 WI-ENVIO-MAPA                PIC 9(01)  VALUE ZEROS.
+              88 ENVIO-ERASE                          VALUE 1.
+              88 ENVIO-DATAONLY                       VALUE 2.
+           03 WI-ERROR-VALIDACION          PIC 9(03)  VALUE ZEROS.
+              88 ERROR-VALIDACION                     VALUE 1.
+
+       01  WL-LITERALES.
+           03 WL-FIN-SESION                PIC X(36)  VALUE
+              'LA TRANSACCION HOLM HA FINALIZADO...'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+      *--- ZONA CALLS -------------------------------------------------
+       COPY LKCENT.
+      *--- ZONA CALLS FIN ---------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+      *    CONFIGURA LA TERMINAL PARA ACEPTAR LETRAS MINUSCULAS,
+      *    SIN MAYUSCULAS FORZADAS
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                NOUCTRAN
+           END-EXEC
+
+      *    IGNORA LA CONDICION MAPFAIL EN CASO DE QUE EL USUARIO
+      *    ENVIE LA PANTALLA VACIA
+           EXEC CICS
+                IGNORE CONDITION MAPFAIL
+           END-EXEC
+
+           MOVE CT-TRN-MENU                TO CV-TRANS
+           MOVE CP-PGM-MENU                TO CV-PROG
+
+           IF  EIBCALEN > ZEROS
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+           END-IF
+
+           EVALUATE TRUE
+      *       NO HAY COMMAREA
+      *       INICIALIZAR COMMAREA Y MOSTRAR MAPA LIMPIO
+              WHEN EIBCALEN = ZEROS
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       HAY COMMAREA
+      *       FUE INVOCADO POR XCTL DESDE OTRO PROGRAMA, INICIALIZAR
+      *       LA COMMAREA Y MOSTRAR MAPA LIMPIO
+              WHEN EIBCALEN > ZEROS
+              AND  CA-TRANS-RETORNO NOT = SPACES
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       BORRADO DE PANTALLA, MENSAJE Y RETORNO A CICS
+              WHEN EIBAID = DFHCLEAR
+              OR   EIBAID = DFHPF3
+                   MOVE LOW-VALUES         TO HOLMMPO
+                   PERFORM 8100-ENVIA-MENSAJE
+                   PERFORM 8900-RETORNO-CICS
+
+              WHEN EIBAID = DFHENTER
+              OR   EIBAID = DFHPF1
+              OR   EIBAID = DFHPF12
+                   PERFORM 1000-PROCESO-MAPA
+
+              WHEN OTHER
+                   PERFORM 1000-PROCESO-MAPA
+           END-EVALUATE
+
+           PERFORM 8200-RETORNO-TRANS
+           .
+       0000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    PROCESA LA PANTALLA SEGUN TECLA ELEGIDA POR EL USUARIO
+      *----------------------------------------------------------------
+       1000-PROCESO-MAPA.
+           PERFORM 8400-RECIBE-MAPA
+
+           EVALUATE TRUE
+      *       ENTER: VALIDAMOS EL MAPA Y SI ES CORRECTO PROCESO ENTER
+              WHEN EIBAID = DFHENTER
+                   PERFORM 1100-VALIDA-MAPA
+
+      *       F1: SE LLAMA AL PROGRAMA DE AYUDA ONLINE
+              WHEN EIBAID = DFHPF1
+                   CONTINUE
+
+      *       F12 : LLAMAMOS AL PROGRAMA DE LISTAS Y SELECCION
+              WHEN EIBAID = DFHPF12
+                   CONTINUE
+
+      *       OTRAS: SE AVISA CON MENSAJE EN PANTALLA Y MAPA LIMPIO
+              WHEN OTHER
+                   MOVE 'TECLA ERRONEA'    TO MSGO
+                   MOVE DFHGREEN           TO OPCC
+           END-EVALUATE.
+
+           SET ENVIO-DATAONLY              TO TRUE
+           PERFORM 8000-ENVIO-MAPA
+           .
+       1000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    VALIDA LOS DATOS DEL MAPA, IDENTIFICA LA OPCION
+      *----------------------------------------------------------------
+       1100-VALIDA-MAPA.
+           INITIALIZE                      CA-HOLM
+           INITIALIZE                      CA-HOLX
+           INITIALIZE                      CA-HOLE
+           INITIALIZE                      CA-PTITULO
+
+           MOVE EIBCPOSN                   TO WC-CURPOS
+           MOVE OPCI                       TO WC-OPCION
+
+           IF  CONSULTA
+               PERFORM 1110-CONSULTA
+           END-IF
+
+           IF  ALTA
+               PERFORM 1120-ALTA
+           END-IF
+
+           IF  MODIFICACION
+               PERFORM 1130-MODIFICACION
+           END-IF
+
+           IF  BAJA
+               PERFORM 1140-BAJA
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND OPCI NOT = SPACES
+           AND OPCI NOT = LOW-VALUES
+           AND OPCI NOT = HIGH-VALUES
+               SET ERROR-VALIDACION        TO TRUE
+               MOVE 'X'                    TO CA-X-ACCION
+               MOVE 'OPCION NO VALIDA'     TO MSGO
+               MOVE DFHRED                 TO OPCC
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND CUR-CONSULTA
+               PERFORM 1110-CONSULTA
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND CUR-ALTA
+               PERFORM 1120-ALTA
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND CUR-MODIFICACION
+               PERFORM 1130-MODIFICACION
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND CUR-BAJA
+               PERFORM 1140-BAJA
+           END-IF
+
+           IF  CA-X-ACCION = SPACES
+           AND (OPCI = SPACES
+           OR  OPCI = LOW-VALUES
+           OR  OPCI = HIGH-VALUES)
+               SET ERROR-VALIDACION        TO TRUE
+               MOVE 'X'                    TO CA-X-ACCION
+               MOVE 'DEBE INFORMAR UNA OPCION' TO MSGO
+               MOVE DFHRED                 TO OPCC
+           END-IF
+
+           IF  NOT ERROR-VALIDACION
+               PERFORM 1190-LLAMAR-PROG-MANTENIMIENTO
+           END-IF
+           .
+       1100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    OPCION CONSULTA
+      *----------------------------------------------------------------
+       1110-CONSULTA.
+           MOVE 'C'                        TO CA-M-OPCION
+           MOVE 'C'                        TO CA-X-ACCION
+           .
+       1110-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    OPCION ALTA
+      *----------------------------------------------------------------
+       1120-ALTA.
+           MOVE 'A'                        TO CA-M-OPCION
+           MOVE 'A'                        TO CA-X-ACCION
+           .
+       1120-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    OPCION MODIFICACION
+      *----------------------------------------------------------------
+       1130-MODIFICACION.
+           MOVE 'M'                        TO CA-M-OPCION
+           MOVE 'M'                        TO CA-X-ACCION
+           .
+       1130-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    OPCION BAJA
+      *----------------------------------------------------------------
+       1140-BAJA.
+           MOVE 'B'                        TO CA-M-OPCION
+           MOVE 'B'                        TO CA-X-ACCION
+           .
+       1140-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    LLAMAMOS AL PROGRAMA DE MANTENIMIENTO
+      *----------------------------------------------------------------
+       1190-LLAMAR-PROG-MANTENIMIENTO.
+           MOVE CP-PGM-MANTENIMIENTO       TO CA-XCTL
+           MOVE CV-TRANS                   TO CA-TRANS
+           MOVE CV-TRANS                   TO CA-TRANS-RETORNO
+           MOVE CP-PGM-MENU                TO CA-PROG-RETORNO
+           PERFORM 8700-XCTL-PROGRAMA
+           .
+       1190-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA EL MAPA AL TERMINAL SERGUN MODO DEL INDICADOR
+      *----------------------------------------------------------------
+       8000-ENVIO-MAPA.
+           EVALUATE TRUE
+              WHEN ENVIO-ERASE
+                   PERFORM 8300-TITULO-MAPA
+
+                   EXEC CICS
+                        SEND MAP    ('HOLMMP')
+                             MAPSET ('HOLMMP')
+                             FROM   (HOLMMPO)
+                             ERASE
+                   END-EXEC
+              WHEN ENVIO-DATAONLY
+                   EXEC CICS
+                        SEND MAP    ('HOLMMP')
+                             MAPSET ('HOLMMP')
+                             FROM   (HOLMMPO)
+                             DATAONLY
+                   END-EXEC
+           END-EVALUATE
+           .
+       8000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA UN MENSAJE AL TERMINAL DEL USUARIO (FIN SESION)
+      *----------------------------------------------------------------
+       8100-ENVIA-MENSAJE.
+           EXEC CICS
+                SEND TEXT
+                     FROM (WL-FIN-SESION)
+                     ERASE
+                     FREEKB
+           END-EXEC
+           .
+       8100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A UNA TRANSACCION
+      *----------------------------------------------------------------
+       8200-RETORNO-TRANS.
+           EXEC CICS
+                RETURN
+                TRANSID  (CV-TRANS)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+           END-EXEC
+           .
+       8200-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    RECUPERAR EL TITULO DEL MAPA                   TABLA: TABLAS
+      *----------------------------------------------------------------
+       8300-TITULO-MAPA.
+           MOVE DB2-TABLA-TITULOS          TO CA-TABLA
+           MOVE CV-TRANS                   TO CA-CLAVE1
+           MOVE LOW-VALUES                 TO CA-CLAVE2
+           MOVE DB2-IDIOMA                 TO CA-CLAVE3
+           MOVE CP-PGM-TABLA-TITULO        TO CA-LINK
+           PERFORM 8500-LINK-PROGRAMA
+
+           EVALUATE TRUE
+              WHEN CA-RESUL = '00'
+              OR   CA-RESUL = '01'
+                   MOVE CA-VALOR           TO LK-BUFFER-ENTRADA
+                   MOVE CV-LONGITUD-TITULO TO LK-LONGITUD-RESULTADO
+                   CALL CP-PGM-CENTER USING LK-CENT
+                   MOVE LK-BUFFER-ENTRADA  TO TITLEO
+              WHEN CA-RESUL = '99'
+                   MOVE '8300-TITULO-MAPA' TO CV-PARRAFO
+                   MOVE 'LINK'             TO CV-ACCION
+                   MOVE 'ERROR AL BUSCAR TITULO' TO CV-MENSAJE
+                   PERFORM 9999-ERROR-COBOL
+           END-EVALUATE
+           .
+       8300-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    RECIBE EL MAPA DE LA TAREA
+      *----------------------------------------------------------------
+       8400-RECIBE-MAPA.
+           EXEC CICS
+                RECEIVE
+                MAP    ('HOLMMP')
+                MAPSET ('HOLMMP')
+                INTO   (HOLMMPI)
+           END-EXEC
+           .
+       8400-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    LLAMA A OTRO PROGRAMA CICS POR LINK CON COMMAREA
+      *----------------------------------------------------------------
+       8500-LINK-PROGRAMA.
+           EXEC CICS
+                LINK
+                PROGRAM  (CA-LINK)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (CV-RESP-CICS)
+                RESP2    (CV-RESP2-CICS)
+           END-EXEC
+
+           IF  CV-RESP-CICS NOT = DFHRESP(NORMAL)
+               MOVE '8500-LINK-PROGRAMA'   TO CV-PARRAFO
+               MOVE 'LINK'                 TO CV-ACCION
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP-CICS       TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP-LIMPIO
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP2-CICS      TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP2-LIMPIO
+
+               STRING CV-RESP-LIMPIO  DELIMITED BY SPACE
+                      '/'             DELIMITED BY SIZE
+                      CV-RESP2-LIMPIO DELIMITED BY SPACE
+                                       INTO CV-CODIGO
+
+               STRING 'ERROR AL LLAMAR PROGRAMA ' DELIMITED BY SIZE
+                      CA-LINK                     DELIMITED BY SPACE
+                                       INTO CV-MENSAJE
+
+               PERFORM 9999-ERROR-CICS
+           END-IF
+           .
+       8500-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    CEDE EL CONTROL A OTRO PROGRAMA CICS
+      *----------------------------------------------------------------
+       8700-XCTL-PROGRAMA.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                XCTL
+                PROGRAM  (CA-XCTL)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (CV-RESP-CICS)
+                RESP2    (CV-RESP2-CICS)
+           END-EXEC
+
+           IF  CV-RESP-CICS NOT = DFHRESP(NORMAL)
+               MOVE '8700-XCTL-PROGRAMA'   TO CV-PARRAFO
+               MOVE 'XCTL'             TO CV-ACCION
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP-CICS       TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP-LIMPIO
+
+               MOVE SPACES             TO CV-CAMPO-ENTRADA
+               MOVE CV-RESP2-CICS      TO CV-CAMPO-ENTRADA
+               PERFORM 9000-FORMATEAR-CAMPO-NUMERICO
+               MOVE CV-CAMPO-SALIDA    TO CV-RESP2-LIMPIO
+
+               STRING CV-RESP-LIMPIO  DELIMITED BY SPACE
+                      '/'             DELIMITED BY SIZE
+                      CV-RESP2-LIMPIO DELIMITED BY SPACE
+                                       INTO CV-CODIGO
+
+               STRING 'ERROR AL CAMBIAR DE PROGRAMA ' DELIMITED BY SIZE
+                      CA-XCTL                         DELIMITED BY SPACE
+                                       INTO CV-MENSAJE
+
+               PERFORM 9999-ERROR-CICS
+           END-IF
+           .
+       8700-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A CICS - SALIDA TOTAL
+      *----------------------------------------------------------------
+       8900-RETORNO-CICS.
+      *    CONFIGURA LA CONVERSION AUTOMATICA A MAYUSCULAS
+      *    EN LA TERMINAL ACTUAL DEL USUARIO
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       8900-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    FORMATAR CAMPO NUMERICO '0000010' -> '10'
+      *>---------------------------------------------------------------
+       9000-FORMATEAR-CAMPO-NUMERICO.
+           MOVE SPACES                 TO CV-CAMPO-SALIDA
+           MOVE 'N'                    TO CV-ENCONTRADO
+           MOVE 1                      TO CV-J
+
+           PERFORM VARYING CV-I FROM 1 BY 1 UNTIL CV-I > 20
+               IF  CV-ENCONTRADO = 'N'
+                   IF  CV-CAMPO-ENTRADA(CV-I:1) NOT = '0'
+                   AND CV-CAMPO-ENTRADA(CV-I:1) NOT = SPACE
+                       MOVE 'S'        TO CV-ENCONTRADO
+                   END-IF
+               END-IF
+               IF  CV-ENCONTRADO = 'S'
+               AND CV-CAMPO-ENTRADA(CV-I:1) NOT = SPACE
+                   MOVE CV-CAMPO-ENTRADA(CV-I:1)
+                                       TO CV-CAMPO-SALIDA(CV-J:1)
+                   ADD 1               TO CV-J
+               END-IF
+           END-PERFORM
+
+           IF  CV-ENCONTRADO = 'N'
+               MOVE '0'                TO CV-CAMPO-SALIDA
+           END-IF
+           .
+
+      *----------------------------------------------------------------
+      *    ERROR DE CICS EN ALGUNA PARTE DEL CODIGO COBOL
+      *----------------------------------------------------------------
+       9999-ERROR-CICS.
+           MOVE CV-TRANS                TO CA-E-TRANSACCION
+           MOVE CV-PROG                 TO CA-E-PROGRAMA
+           MOVE CV-PARRAFO              TO CA-E-PARRAFO
+           MOVE CV-ACCION               TO CA-E-ACCION
+           MOVE CV-CODIGO               TO CA-E-CODIGO
+           MOVE CV-MENSAJE              TO CA-E-MENSAJE
+           MOVE CP-PGM-ERROR            TO CA-XCTL
+           MOVE CV-TRANS                TO CA-TRANS-RETORNO
+           MOVE CV-PROG                 TO CA-PROG-RETORNO
+
+           PERFORM 8700-XCTL-PROGRAMA
+           .
+       9999-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ERROR DE COBOL EN ALGUNA PARTE DEL CODIGO COBOL
+      *----------------------------------------------------------------
+       9999-ERROR-COBOL.
+           MOVE CV-TRANS                TO CA-E-TRANSACCION
+           MOVE CV-PROG                 TO CA-E-PROGRAMA
+           MOVE CV-PARRAFO              TO CA-E-PARRAFO
+           MOVE CV-ACCION               TO CA-E-ACCION
+           MOVE -999999999              TO CA-E-CODIGO
+           MOVE CV-MENSAJE              TO CA-E-MENSAJE
+           MOVE CP-PGM-ERROR            TO CA-XCTL
+           MOVE CV-TRANS                TO CA-TRANS-RETORNO
+           MOVE CV-PROG                 TO CA-PROG-RETORNO
+
+           PERFORM 8700-XCTL-PROGRAMA
+           .
+       9999-EXIT.
+           EXIT.

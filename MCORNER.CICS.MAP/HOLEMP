@@ -1,0 +1,139 @@
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                     -----  MAP  'HOLEMP'  -----                     *
+*                 PANTALLA DE ERRORES EN LA APLICACION                *
+*                             VERSION 1.0                             *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+HOLEMP   DFHMSD TYPE=DSECT,                                            X
+               MODE=INOUT,                                             X
+               LANG=COBOL,                                             X
+               TIOAPFX=YES,                                            X
+               TERM=ALL,                                               X
+               CTRL=FREEKB,                                            X
+               STORAGE=AUTO,                                           X
+               EXTATT=YES,                                             X
+               COLOR=GREEN,                                            X
+               MAPATTS=(COLOR,HILIGHT,OUTLINE),                        X
+               DSATTS=(COLOR,HILIGHT,OUTLINE)
+*
+HOLEMP   DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                             ENCABEZADO                              *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+TRN      DFHMDF POS=(01,01),                                           X
+               LENGTH=04,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='HOLE'
+*
+TITLE    DFHMDF POS=(01,28),                                           X
+               LENGTH=25,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='ERROR GRAVE EN APLICACION'
+*
+         DFHMDF POS=(02,01),                                           X
+               LENGTH=78,                                              X
+               INITIAL='===============================================X
+               ===============================',                       X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               CUERPO                                *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+         DFHMDF POS=(07,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='TRANSACCION....:'
+TRAN     DFHMDF POS=(07,24),                                           X
+               LENGTH=04,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(08,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='PROGRAMA.......:'
+PROG     DFHMDF POS=(08,24),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(09,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='PARRAFO........:'
+PARR     DFHMDF POS=(09,24),                                           X
+               LENGTH=30,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(10,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='ACCION.........:'
+ACCN     DFHMDF POS=(10,24),                                           X
+               LENGTH=20,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(11,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='CODIGO.........:'
+COD      DFHMDF POS=(11,24),                                           X
+               LENGTH=10,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(12,06),                                           X
+               LENGTH=16,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='MENJAJE........:'
+MEN      DFHMDF POS=(12,24),                                           X
+               LENGTH=50,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=TURQUOISE
+*
+         DFHMDF POS=(15,20),                                           X
+               LENGTH=40,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=YELLOW,                                           X
+               INITIAL='ENVIA ESTA PANTALLA A SOPORTE Y PULSA F3'
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                            PIE DE PAGINA                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+         DFHMDF POS=(21,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+         DFHMDF POS=(22,01),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='F3-SALIR'
+*
+         DFHMDF POS=(23,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+MSG      DFHMDF POS=(24,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,BRT,FSET),                                  X
+               COLOR=RED
+*
+         DFHMSD TYPE=FINAL
+         END

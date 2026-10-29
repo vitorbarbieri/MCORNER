@@ -1,0 +1,3 @@
+       01  LK-CENT.
+           03 LK-BUFFER-ENTRADA            PIC X(80).
+           03 LK-LONGITUD-RESULTADO        PIC 9(02).

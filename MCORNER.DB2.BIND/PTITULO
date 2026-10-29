@@ -1,0 +1,11 @@
+DSN SYSTEM(DB9G)
+   BIND PLAN (PTITULO)                  -
+        MEM (PTITULO)                   -
+        ENCODING (284)                  -
+        LIBRARY ('MCORNER.DB2.DBRMLIB') -
+        RELEASE (COMMIT)                -
+        ISOLATION (CS)                  -
+        VALIDATE (BIND)                 -
+        ACTION (REPLACE)                -
+        OWNER (IBMUSER)
+END

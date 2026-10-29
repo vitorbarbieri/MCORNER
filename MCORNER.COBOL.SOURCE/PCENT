@@ -1,0 +1,173 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. PCENT.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ...........: HOL                                  *
+      *    PROGRAMA ...........: PCENT                                *
+      *    VERSION ............: 1.0                                  *
+      *    TITULO .............: RUTINA DE CENTRADO DE TEXTO          *
+      *                                                               *
+      *    TIPO ...............:                                      *
+      *    - LENGUAJE .........: COBOL                                *
+      *    - ENTORNO ..........: CICS                                 *
+      *    - BASE DE DATOS ....: DB2                                  *
+      *                                                               *
+      *    DESCRIPCION ........:                                      *
+      *    - Recibe por LINKAGE un texto de 80 caracteres y una       *
+      *      longitud de resultado deseado (Z)                        *
+      *      Devuelve el texto util de entrada con X espacios         *
+      *      delante e Y espacios detras, de forma a que el texto     *
+      *      util de entrada este centrado en las Z posiciones de     *
+      *      texto resultado                                          *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-10-28 CREACION DEL PROGRAMA PCENT                     *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA WORKING -----------------------------------------------
+       01  WS-VARIABLES.
+           03 WS-I                         PIC 9(03) VALUE  ZEROS.
+           03 WS-INI                       PIC 9(03) VALUE  ZEROS.
+           03 WS-FIN                       PIC 9(03) VALUE  ZEROS.
+           03 WS-INIR                      PIC 9(03) VALUE  ZEROS.
+           03 WS-LONG-UTIL                 PIC 9(03) VALUE  ZEROS.
+           03 WS-LONG                      PIC 9(03) VALUE  ZEROS.
+           03 WS-CENTRO                    PIC 9(02) VALUE  ZEROS.
+           03 WS-BUFFER-RESULTADO          PIC X(80) VALUE  SPACES.
+
+       01  WI-INDICADORES.
+           03 WI-FIN-BUBLE                 PIC X(01) VALUE 'N'.
+              88 FIN-BUCLE                           VALUE 'S'.
+           03 WI-ERROR-DATOS               PIC X(01) VALUE 'N'.
+              88 ERROR-DATOS                         VALUE 'S'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       COPY LKCENT.
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION USING LK-CENT.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+           MOVE LENGTH OF LK-BUFFER-ENTRADA TO WS-LONG
+
+           IF  WS-LONG > ZEROS
+               PERFORM 1000-PRIMER-UTIL
+               IF  NOT ERROR-DATOS
+                   PERFORM 2000-ULTIMO-UTIL
+                   IF  NOT ERROR-DATOS
+                       PERFORM 3000-CALCULOS
+                   END-IF
+               END-IF
+           ELSE
+               SET ERROR-DATOS             TO TRUE
+               INITIALIZE                  LK-CENT
+           END-IF
+
+           GOBACK
+           .
+       0000-EXIT.
+           EXIT.
+      *----------------------------------------------------------------
+      *    EXPLORAR PRIMER CARACTER UTIL DE LK-BUFFER-ENTRADA
+      *----------------------------------------------------------------
+       1000-PRIMER-UTIL.
+           MOVE 1                          TO WS-I
+           MOVE 'N'                        TO WI-FIN-BUBLE
+           PERFORM UNTIL WS-I > WS-LONG
+           OR FIN-BUCLE
+              IF  LK-BUFFER-ENTRADA(WS-I:1) NOT = SPACES
+              AND LK-BUFFER-ENTRADA(WS-I:1) NOT = HIGH-VALUES
+              AND LK-BUFFER-ENTRADA(WS-I:1) NOT = LOW-VALUES
+                  MOVE WS-I                TO WS-INI
+                  SET FIN-BUCLE            TO TRUE
+              END-IF
+              ADD 1                        TO WS-I
+           END-PERFORM
+
+           IF  NOT FIN-BUCLE
+               SET ERROR-DATOS             TO TRUE
+           END-IF
+           .
+       1000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    EXPLORAR ULTIMO CARACTER UTIL DE LK-BUFFER-ENTRADA
+      *    CALCULAMOS LA LONGITUD UTIL REAL DEL TEXTO DE ENTRADA
+      *----------------------------------------------------------------
+       2000-ULTIMO-UTIL.
+           MOVE 80                         TO WS-I
+           MOVE 'N'                        TO WI-FIN-BUBLE
+           PERFORM UNTIL WS-I = ZEROS
+           OR FIN-BUCLE
+              IF  LK-BUFFER-ENTRADA(WS-I:1) NOT = SPACES
+              AND LK-BUFFER-ENTRADA(WS-I:1) NOT = HIGH-VALUES
+              AND LK-BUFFER-ENTRADA(WS-I:1) NOT = LOW-VALUES
+                  MOVE WS-I                TO WS-FIN
+                  SET FIN-BUCLE            TO TRUE
+              END-IF
+              SUBTRACT 1                   FROM WS-I
+           END-PERFORM
+
+           IF  NOT FIN-BUCLE
+               SET ERROR-DATOS             TO TRUE
+           END-IF
+           .
+       2000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    CALCULAMOS EL RESULTADO DEVOLVIENDO EL TEXTO CENTRADO EN
+      *    LK-BUFFER-ENTRADA Y LA LONGITUD UTIL DEL TEXTO EN
+      *    LK-LONGITUD-RESULTADO
+      *----------------------------------------------------------------
+       3000-CALCULOS.
+           IF  WS-INI NOT = WS-FIN
+               COMPUTE WS-LONG-UTIL = WS-FIN - WS-INI + 1
+           ELSE
+               MOVE 1                      TO WS-LONG-UTIL
+           END-IF
+
+           MOVE SPACES                     TO WS-BUFFER-RESULTADO
+
+           COMPUTE WS-CENTRO ROUNDED = LK-LONGITUD-RESULTADO / 2
+           COMPUTE WS-INIR ROUNDED = WS-CENTRO - (WS-LONG-UTIL / 2)
+
+           MOVE LK-BUFFER-ENTRADA(WS-INI : WS-LONG-UTIL)
+                TO WS-BUFFER-RESULTADO(WS-INIR : WS-LONG-UTIL)
+
+           MOVE WS-BUFFER-RESULTADO        TO LK-BUFFER-ENTRADA
+           MOVE LENGTH OF LK-BUFFER-ENTRADA TO LK-LONGITUD-RESULTADO
+           .
+       3000-EXIT.
+           EXIT.

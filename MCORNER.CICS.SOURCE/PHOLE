@@ -1,0 +1,262 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. PHOLE.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ...........: HOL                                  *
+      *    PROGRAMA ...........: PHOLE                                *
+      *    VERSION ............: 1.0                                  *
+      *    TITULO .............: PROGRAMA VISUALIZADOR DE ERRORES     *
+      *                                                               *
+      *    TIPO ...............:                                      *
+      *    - LENGUAJE .........: COBOL                                *
+      *    - ENTORNO ..........: CICS                                 *
+      *    - BASE DE DATOS ....: DB2                                  *
+      *                                                               *
+      *    DESCRIPCION ........:                                      *
+      *    - RECIBE POR COMMAREA LOS DATOS A MOSTRAR EN PANTALLA      *
+      *    - DEVUELVE EL CONTROL AL PROGRAMA QUE HA LLAMADO XCTL      *
+      *      A PARTIR DE LOS DATOS DE COMMAREA *-RETORNO              *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-10-27 CREACION DEL PROGRAMA PHOLE                     *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA CICS --------------------------------------------------
+       COPY DFHAID.
+       COPY DFHBMSCA.
+       COPY HOLEMP.
+      *--- ZONA CICS FIN ----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       COPY HOLWS.
+
+       01  WI-INDICADORES.
+           03 WI-ENVIO-MAPA                PIC 9(01)  VALUE ZEROS.
+              88 ENVIO-ERASE                          VALUE 1.
+              88 ENVIO-DATAONLY                       VALUE 2.
+
+       01  WL-LITERALES.
+           03 WL-FIN-SESION                PIC X(36)  VALUE
+              'LA TRANSACCION HOLE HA FINALIZADO...'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+      *    CONFIGURA LA TERMINAL PARA ACEPTAR LETRAS MINUSCULAS,
+      *    SIN MAYUSCULAS FORZADAS
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                NOUCTRAN
+           END-EXEC
+
+      *    IGNORA LA CONDICION MAPFAIL EN CASO DE QUE EL USUARIO
+      *    ENVIE LA PANTALLA VACIA
+           EXEC CICS
+                IGNORE CONDITION MAPFAIL
+           END-EXEC
+
+           MOVE CT-TRN-ERROR                TO CV-TRANS
+           MOVE CP-PGM-ERROR                TO CV-PROG
+
+           IF  EIBCALEN > ZEROS
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+           END-IF
+
+           EVALUATE TRUE
+      *       NO HAY COMMAREA
+      *       SITUACION ANORMAL. NO SE DEBE ARRANCAR HOLE DESDE CICS
+      *       SE ENVIA MAPA VACIO CON MENSAJE
+              WHEN EIBCALEN = ZEROS
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   MOVE 'LA TRANSACCION NO ES ARRANCABLE DESDE CICS'
+                                           TO MSGO
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       HAY COMMAREA
+      *       FUE INVOCADO POR XCTL DESDE OTRO PROGRAMA, ESTO PERMITE
+      *       DETECTAR COMMAREA MAS PRIMERA EJECUCION PARA ENVIAR UN
+      *       MAPA CON LOS DATOS DEL ERROR RECIBIDOS POR CA
+              WHEN EIBCALEN > ZEROS
+              AND  EIBTRNID NOT = CV-TRANS
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 1100-CARGA-DATOS
+                   PERFORM 8000-ENVIO-MAPA
+
+      *       BORRADO DE PANTALLA, MENSAJE Y RETORNO A CICS
+              WHEN EIBAID = DFHCLEAR
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   PERFORM 8100-ENVIA-MENSAJE
+                   PERFORM 8900-RETORNO-CICS
+
+      *       BORRADO DE PANTALLA, MENSAJE Y RETORNO A CICS
+              WHEN EIBAID = DFHPF3
+              AND  CA-TRANS-RETORNO = SPACES
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   PERFORM 8100-ENVIA-MENSAJE
+                   PERFORM 8900-RETORNO-CICS
+      *
+      *       F3 VOLVEREMOS A LA TRANSACCION QUE NOS LLAMO CON XCTL
+      *       O TERMINAREMOS DEL TODO EL PROCESO
+              WHEN EIBAID = DFHPF3
+              AND  CA-TRANS-RETORNO NOT = SPACES
+                   MOVE CA-TRANS-RETORNO   TO CV-TRANS
+                   MOVE CA-PROG-RETORNO    TO CA-XCTL
+                   PERFORM 8700-XCTL-PROGRAMA
+
+              WHEN EIBAID = DFHENTER
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   SET ENVIO-DATAONLY      TO TRUE
+                   MOVE 'POR FAVOR, PULSA F3 PARA SALIR'  TO MSGO
+                   PERFORM 8000-ENVIO-MAPA
+
+              WHEN OTHER
+                   MOVE LOW-VALUES         TO HOLEMPO
+                   SET ENVIO-DATAONLY      TO TRUE
+                   MOVE 'TECLA NO VALIDA'  TO MSGO
+                   PERFORM 8000-ENVIO-MAPA
+           END-EVALUATE
+
+           PERFORM 8200-RETORNO-TRANS
+           .
+       0000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    CARGA LOS DATOS DE COMMAREA EN PANTALLA
+      *----------------------------------------------------------------
+       1100-CARGA-DATOS.
+           MOVE CA-E-TRANSACCION           TO TRANO
+           MOVE CA-E-PROGRAMA              TO PROGO
+           MOVE CA-E-PARRAFO               TO PARRO
+           MOVE CA-E-ACCION                TO ACCNO
+           MOVE CA-E-CODIGO                TO CODO
+           MOVE CA-E-MENSAJE               TO MENO
+           .
+       1100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA EL MAPA AL TERMINAL SERGUN MODO DEL INDICADOR
+      *----------------------------------------------------------------
+       8000-ENVIO-MAPA.
+           EVALUATE TRUE
+              WHEN ENVIO-ERASE
+                   EXEC CICS
+                        SEND MAP    ('HOLEMP')
+                             MAPSET ('HOLEMP')
+                             FROM   (HOLEMPO)
+                             ERASE
+                   END-EXEC
+              WHEN ENVIO-DATAONLY
+                   EXEC CICS
+                        SEND MAP    ('HOLEMP')
+                             MAPSET ('HOLEMP')
+                             FROM   (HOLEMPO)
+                             DATAONLY
+                   END-EXEC
+           END-EVALUATE
+           .
+       8000-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    ENVIA UN MENSAJE AL TERMINAL DEL USUARIO (FIN SESION)
+      *----------------------------------------------------------------
+       8100-ENVIA-MENSAJE.
+           EXEC CICS
+                SEND TEXT
+                     FROM (WL-FIN-SESION)
+                     ERASE
+                     FREEKB
+           END-EXEC
+           .
+       8100-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A UNA TRANSACCION
+      *----------------------------------------------------------------
+       8200-RETORNO-TRANS.
+           EXEC CICS
+                RETURN
+                TRANSID  (CV-TRANS)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+           END-EXEC
+           .
+       8200-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    CEDE EL CONTROL A OTRO PROGRAMA CICS
+      *----------------------------------------------------------------
+       8700-XCTL-PROGRAMA.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                XCTL
+                PROGRAM  (CA-XCTL)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (CV-RESP-CICS)
+                RESP2    (CV-RESP2-CICS)
+           END-EXEC
+           .
+
+      *----------------------------------------------------------------
+      *    DEVUELVE EL CONTROL A CICS - SALIDA TOTAL
+      *----------------------------------------------------------------
+       8900-RETORNO-CICS.
+      *    CONFIGURA LA CONVERSION AUTOMATICA A MAYUSCULAS
+      *    EN LA TERMINAL ACTUAL DEL USUARIO
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       8900-EXIT.
+           EXIT.

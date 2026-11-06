@@ -1,0 +1,24 @@
+-- ====================================================================
+-- SCRIPT  : CREACION DEL TABLESPACE AYUDASTS
+-- VERSION : 1.0
+-- ====================================================================
+
+DROP TABLESPACE MCORNDB.AYUDASTS;
+
+COMMIT;
+
+CREATE TABLESPACE AYUDASTS
+    IN MCORNDB
+    USING STOGROUP MCORNSG
+    PRIQTY 250
+    SECQTY 100
+    ERASE NO
+    FREEPAGE 10
+    PCTFREE 10
+    BUFFERPOOL BP1
+    COMPRESS NO
+    LOCKSIZE ANY
+    LOCKMAX SYSTEM
+    CLOSE YES;
+
+COMMIT;

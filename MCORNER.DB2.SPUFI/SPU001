@@ -1,0 +1,14 @@
+-- ====================================================================
+-- SCRIPT  : CREACION DEL STORAGE GROUP MCORNSG
+-- VERSION : 1.0
+-- ====================================================================
+
+DROP STOGROUP MCORNSG;
+
+COMMIT;
+
+CREATE STOGROUP MCORNSG
+    VOLUMES (PRJ001)
+    VCAT MCORNCAT;
+
+COMMIT;

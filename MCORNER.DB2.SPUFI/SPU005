@@ -1,0 +1,24 @@
+-- ====================================================================
+-- SCRIPT  : CREACION DEL TABLESPACE TABLASTS
+-- VERSION : 1.0
+-- ====================================================================
+
+DROP TABLESPACE MCORNDB.TABLASTS;
+
+COMMIT;
+
+CREATE TABLESPACE TABLASTS
+    IN MCORNDB
+    USING STOGROUP MCORNSG
+    PRIQTY 250
+    SECQTY 100
+    ERASE NO
+    FREEPAGE 10
+    PCTFREE 10
+    BUFFERPOOL BP1
+    COMPRESS NO
+    LOCKSIZE ANY
+    LOCKMAX SYSTEM
+    CLOSE YES;
+
+COMMIT;

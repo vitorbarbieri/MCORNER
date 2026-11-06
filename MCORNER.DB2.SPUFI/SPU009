@@ -1,0 +1,90 @@
+-- ====================================================================
+-- SCRIPT  : CARGA INICIAL DE DATOS DE LA TABLA CLIENTES
+-- VERSION : 1.0
+-- ====================================================================
+
+--- PASO 1: BORRADO DE REGISTROS EXISTENTES EN LA TABLA
+
+DELETE FROM MCORNER.CLIENTES;
+
+--- PASO 2: INSERCION DE REGISTRO DE PRUEBA
+
+INSERT INTO MCORNER.CLIENTES  (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '13432584D',
+    'Luisa',
+    'Mateu Pastor',
+    'Bellavista, 27 (Fuentelapena)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '90121449C',
+    'Andreu',
+    'Simon Ripoll',
+    'Camino Ancho, 63 (La Maya)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '32774319D',
+    'Carla',
+    'Vargas Rivero',
+    'Reisenor, 3 (Almassera)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '24067226A',
+    'Mar',
+    'Palomo Grau',
+    'Extramuros, 52 (Campo Real)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '95676843V',
+    'Ana',
+    'Pinero Sastre',
+    'Plaza de Espana, 85 (Toques)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '38737095N',
+    'Ursula',
+    'Sans Perales',
+    'El Roqueo, 50 (San Clemente)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '89689267P',
+    'Gala',
+    'Pitarch Costa',
+    'Paseo Junquera, 42 (Soneja)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '45728896C',
+    'Ayoze',
+    'Alemany Arribas',
+    'Valadouro, 24 (Gordexola)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '99789295T',
+    'Vera',
+    'Palomo Alvarez',
+    'Rio Segura, 5 (Caparroso)'
+);
+
+INSERT INTO MCORNER.CLIENTES (DNI, NOMBRE, APELLIDOS, DIRECCION)
+VALUES (
+    '12124664F',
+    'Igor',
+    'Royo Prado',
+    'Salzillo, 27 (Vilardevos)'
+);

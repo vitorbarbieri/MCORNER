@@ -1,0 +1,15 @@
+-- ====================================================================
+-- SCRIPT  : CREACION DE LA BASE DE DATOS MCORNDB
+-- VERSION : 1.0
+-- ====================================================================
+
+DROP DATABASE MCORNDB;
+
+COMMIT;
+
+CREATE DATABASE MCORNDB
+    CCSID EBCDIC
+    BUFFERPOOL BP1
+    STOGROUP MCORNSG;
+
+COMMIT;

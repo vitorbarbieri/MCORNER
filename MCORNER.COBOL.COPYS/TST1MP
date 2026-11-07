@@ -1,0 +1,69 @@
+       01  TST1MPI.
+           02  FILLER PIC X(12).
+           02  TRNL    COMP  PIC  S9(4).
+           02  TRNF    PICTURE X.
+           02  FILLER REDEFINES TRNF.
+             03 TRNA    PICTURE X.
+           02  FILLER   PICTURE X(5).
+           02  TRNI  PIC X(4).
+           02  TITLEL    COMP  PIC  S9(4).
+           02  TITLEF    PICTURE X.
+           02  FILLER REDEFINES TITLEF.
+             03 TITLEA    PICTURE X.
+           02  FILLER   PICTURE X(5).
+           02  TITLEI  PIC X(44).
+           02  DNIL    COMP  PIC  S9(4).
+           02  DNIF    PICTURE X.
+           02  FILLER REDEFINES DNIF.
+             03 DNIA    PICTURE X.
+           02  FILLER   PICTURE X(5).
+           02  DNII  PIC X(9).
+           02  LONL    COMP  PIC  S9(4).
+           02  LONF    PICTURE X.
+           02  FILLER REDEFINES LONF.
+             03 LONA    PICTURE X.
+           02  FILLER   PICTURE X(5).
+           02  LONI  PIC 999999999.
+           02  MSGL    COMP  PIC  S9(4).
+           02  MSGF    PICTURE X.
+           02  FILLER REDEFINES MSGF.
+             03 MSGA    PICTURE X.
+           02  FILLER   PICTURE X(5).
+           02  MSGI  PIC X(78).
+       01  TST1MPO REDEFINES TST1MPI.
+           02  FILLER PIC X(12).
+           02  FILLER PICTURE X(3).
+           02  TRNC    PICTURE X.
+           02  TRNP    PICTURE X.
+           02  TRNH    PICTURE X.
+           02  TRNV    PICTURE X.
+           02  TRNU    PICTURE X.
+           02  TRNO  PIC X(4).
+           02  FILLER PICTURE X(3).
+           02  TITLEC    PICTURE X.
+           02  TITLEP    PICTURE X.
+           02  TITLEH    PICTURE X.
+           02  TITLEV    PICTURE X.
+           02  TITLEU    PICTURE X.
+           02  TITLEO  PIC X(44).
+           02  FILLER PICTURE X(3).
+           02  DNIC    PICTURE X.
+           02  DNIP    PICTURE X.
+           02  DNIH    PICTURE X.
+           02  DNIV    PICTURE X.
+           02  DNIU    PICTURE X.
+           02  DNIO  PIC X(9).
+           02  FILLER PICTURE X(3).
+           02  LONC    PICTURE X.
+           02  LONP    PICTURE X.
+           02  LONH    PICTURE X.
+           02  LONV    PICTURE X.
+           02  LONU    PICTURE X.
+           02  LONO PIC ZZZZZZZZ9.
+           02  FILLER PICTURE X(3).
+           02  MSGC    PICTURE X.
+           02  MSGP    PICTURE X.
+           02  MSGH    PICTURE X.
+           02  MSGV    PICTURE X.
+           02  MSGU    PICTURE X.
+           02  MSGO  PIC X(78).

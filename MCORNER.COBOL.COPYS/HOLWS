@@ -1,0 +1,21 @@
+       01  CA-COMMAREA-HOL.
+      *    Length: 34 bytes
+           03 CA-COMUN.
+              05 CA-TRANS                  PIC X(04).
+              05 CA-TRANS-RETORNO          PIC X(04).
+              05 CA-PROG-RETORNO           PIC X(08).
+              05 CA-XCTL                   PIC X(08).
+              05 CA-LINK                   PIC X(08).
+              05 CA-CURPOS                 PIC S9(04) COMP.
+           03 FILLER                       PIC X(2014).
+
+       01  CP-PROGRAMAS-HOL.
+           03 CP-PGM-PRUEBA                PIC X(08) VALUE 'PTST1'.
+
+       01  CT-TRANSACCIONES-HOL.
+           03 CT-TRN-PRUEBA                PIC X(04) VALUE 'TST1'.
+
+       01  WA-VARIABLES-HOL.
+           03 WA-TRANS                     PIC X(04) VALUE SPACES.
+           03 WA-PROG                      PIC X(08) VALUE SPACES.
+           03 WA-PARRAFO                   PIC X(30) VALUE SPACES.

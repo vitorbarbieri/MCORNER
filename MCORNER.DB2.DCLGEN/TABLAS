@@ -1,0 +1,36 @@
+      ******************************************************************
+      * DCLGEN TABLE(MCORNER.TABLAS)                                   *
+      *        LIBRARY(MCORNER.DB2.DCLGEN(TABLAS))                     *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        NAMES(TB-)                                              *
+      *        STRUCTURE(TB-TABLAS)                                    *
+      *        QUOTE                                                   *
+      *        DBCSDELIM(NO)                                           *
+      *        COLSUFFIX(YES)                                          *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE MCORNER.TABLAS TABLE
+           ( TABLA                          CHAR(8) NOT NULL,
+             CLAVE1                         CHAR(8) NOT NULL,
+             CLAVE2                         CHAR(8),
+             CLAVE3                         CHAR(8),
+             VALOR                          CHAR(64) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE MCORNER.TABLAS                     *
+      ******************************************************************
+       01  TB-TABLAS.
+      *                       TABLA
+           10 TB-TABLA             PIC X(8).
+      *                       CLAVE1
+           10 TB-CLAVE1            PIC X(8).
+      *                       CLAVE2
+           10 TB-CLAVE2            PIC X(8).
+      *                       CLAVE3
+           10 TB-CLAVE3            PIC X(8).
+      *                       VALOR
+           10 TB-VALOR             PIC X(64).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 5       *
+      ******************************************************************

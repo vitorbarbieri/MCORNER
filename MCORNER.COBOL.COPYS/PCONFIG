@@ -1,0 +1,33 @@
+      *    Configura la terminal para aceptar letras minusculas,
+      *    sin mayusculas forzadas
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                NOUCTRAN
+           END-EXEC
+
+      *    Ignora la condicion mapfail en caso de que el usuario
+      *    envie la pantalla vacia
+           EXEC CICS
+                IGNORE CONDITION MAPFAIL
+           END-EXEC
+
+      *    Configura el tratamiento de errores sql para redirigir
+      *    al parrafo de errores en caso de fallo
+           EXEC SQL
+                WHENEVER SQLERROR
+                GO TO 9000-ERROR-DB2
+           END-EXEC
+
+      *    Configura el tratamiento de avisos sql para redirigir
+      *    al parrafo de errores en caso de advertencia
+           EXEC SQL
+                WHENEVER SQLWARNING
+                GO TO 9000-ERROR-DB2
+           END-EXEC
+
+      *    Configura el comportamiento cuando no se encuentran
+      *    registros en la consulta, permitiendo continuar el flujo
+           EXEC SQL
+                WHENEVER NOT FOUND
+                CONTINUE
+           END-EXEC

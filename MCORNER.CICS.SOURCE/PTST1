@@ -63,6 +63,9 @@
       *--- ZONA DB2 FIN -----------------------------------------------
 
       *--- ZONA WORKING -----------------------------------------------
+       01  FILLER                          PIC X(19)
+           VALUE '***START-WORKING***'.
+
        COPY HOLWS.
 
        01  WS-VARIABLES.
@@ -78,6 +81,9 @@
        01  WL-LITERALES.
            03 WL-FIN-SESION                PIC X(36)  VALUE
               'La transaccion TST1 ha finalizado...'.
+
+       01  FILLER                          PIC X(17)
+           VALUE '***END-WORKING***'.
       *--- ZONA WORKING FIN -------------------------------------------
 
        LINKAGE SECTION.
@@ -92,7 +98,7 @@
       *----------------------------------------------------------------
       *    PROCESO PRINCIPAL
       *----------------------------------------------------------------
-       0000-MAIN.
+       0000-PRINCIPAL.
            EXEC SQL
                 INCLUDE PCONFIG
            END-EXEC
@@ -145,7 +151,7 @@
 
            PERFORM 9000-RETORNO-TRANS
            .
-       0000-EXIT.
+       0000-PRINCIPAL-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -189,7 +195,7 @@
 
            PERFORM 9000-ENVIA-MAPA
            .
-       1000-EXIT.
+       1000-PROCESA-MAPA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -205,7 +211,7 @@
 
            PERFORM 1110-MAYUSCULAS
            .
-       1100-EXIT.
+       1100-RECIBE-MAPA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -217,7 +223,7 @@
            INSPECT DNII CONVERTING 'abcdefghijklmnopqrstuvwxyz'
                                 TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
            .
-       1110-EXIT.
+       1110-MAYUSCULAS-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -232,7 +238,7 @@
                SET ERROR-VALIDACION        TO TRUE
            END-IF
            .
-       1200-EXIT.
+       1200-VALIDA-MAPA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -245,14 +251,14 @@
            PERFORM 1310-BUSCA-CLIENTE
 
            IF  SQLCODE = ZEROS
-                MOVE CL-NOMBRE             TO MSGO
-                MOVE DFHGREEN              TO MSGC
+               MOVE CL-NOMBRE              TO MSGO
+               MOVE DFHGREEN               TO MSGC
            ELSE
-                MOVE 'No existe este DNI'  TO MSGO
-                MOVE DFHRED                TO MSGC
+               MOVE 'No existe este DNI'   TO MSGO
+               MOVE DFHRED                 TO MSGC
            END-IF
            .
-       1300-EXIT.
+       1300-PROCESA-MAPA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -272,7 +278,7 @@
                  WHERE DNI = :CL-DNI
            END-EXEC
            .
-       1310-EXIT.
+       1310-BUSCA-CLIENTE-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -282,7 +288,7 @@
            MOVE LENGTH OF CA-COMMAREA-HOL  TO WS-LENGHT-COMMAREA
            MOVE WS-LENGHT-COMMAREA         TO LONO
            .
-       1600-EXIT.
+       1600-LONGITUD-COMMAREA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -290,8 +296,8 @@
       *----------------------------------------------------------------
        9000-ENVIA-MAPA.
            EVALUATE TRUE
-      *        Envio deL mapa limpio
-               WHEN ENVIO-ERASE
+      *       Envio deL mapa limpio
+              WHEN ENVIO-ERASE
                    EXEC CICS
                         SEND
                         MAP    ('TST1MP')
@@ -300,8 +306,8 @@
                         ERASE
                    END-EXEC
 
-      *        Envio del mapa datos unicamente
-               WHEN ENVIO-DATAONLY
+      *       Envio del mapa datos unicamente
+              WHEN ENVIO-DATAONLY
                    EXEC CICS
                         SEND
                         MAP      ('TST1MP')
@@ -311,7 +317,7 @@
                    END-EXEC
            END-EVALUATE
            .
-       9000-EXIT.
+       9000-ENVIA-MAPA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -319,14 +325,14 @@
       *----------------------------------------------------------------
        9000-ENVIA-MENSAJE.
            EXEC CICS
-               SEND
-               TEXT
-               FROM   (WL-FIN-SESION)
-               ERASE
-               FREEKB
+                SEND
+                TEXT
+                FROM   (WL-FIN-SESION)
+                ERASE
+                FREEKB
            END-EXEC
            .
-       9000-EXIT.
+       9000-ENVIA-MENSAJE-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -342,7 +348,7 @@
                 RETURN
            END-EXEC
            .
-       9000-EXIT.
+       9000-RETORNO-CICS-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -356,7 +362,7 @@
                 LENGTH   (LENGTH OF CA-COMMAREA-HOL)
            END-EXEC
            .
-       9000-EXIT.
+       9000-RETORNO-TRANS-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -369,5 +375,5 @@
                CONTINUE
            END-IF
            .
-       9000-EXIT.
+       9000-ERROR-DB2-EXIT.
            EXIT.

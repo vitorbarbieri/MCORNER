@@ -84,7 +84,7 @@ LON      DFHMDF POS=(10,25),                                           X
                ATTRB=(PROT,NORM),                                      X
                COLOR=NEUTRAL,                                          X
                INITIAL='F1-Ayuda        F2-Forzar Err   F3-Fin         X
-                F4-Longitud     F5-Refresrxxxx'
+                F4-Longitud     F5-xxxxxxxxxxx'
 *
          DFHMDF POS=(22,01),                                           X
                LENGTH=78,                                              X

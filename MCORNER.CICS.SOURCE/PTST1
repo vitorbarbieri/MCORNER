@@ -27,6 +27,7 @@
       *    LOG DE MODIFICACIONES:                                     *
       *    FECHA----- DESCRIPCION------------------------------------ *
       *    2026-11-06 Creacion del programa PTST1                     *
+      *    2026-11-13 Añadir la llamada al programa PHOLE             *
       *                                                               *
       *****************************************************************
 
@@ -104,6 +105,7 @@
            END-EXEC
 
            MOVE CT-TRN-PRUEBA              TO WA-TRANS
+           MOVE CP-PGM-PRUEBA              TO WA-PROG
 
            IF  EIBCALEN > ZEROS
                MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
@@ -175,7 +177,7 @@
                    SET ENVIO-DATAONLY      TO TRUE
 
               WHEN EIBAID = DFHPF2
-                   SET ENVIO-DATAONLY      TO TRUE
+                   PERFORM 1500-PROCESO-PF2
 
               WHEN EIBAID = DFHPF4
                    PERFORM 1600-LONGITUD-COMMAREA
@@ -282,6 +284,16 @@
            EXIT.
 
       *----------------------------------------------------------------
+      *    Simulamos una deteccion de error de DB2
+      *----------------------------------------------------------------
+       1500-PROCESO-PF2.
+           MOVE '1500-PROCESO-PF2'         TO WA-PARRAFO
+           GO TO 9000-ERROR-DB2
+           .
+       1500-PROCESO-PF2-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
       *    Devuelve la longitud de la COMMAREA
       *----------------------------------------------------------------
        1600-LONGITUD-COMMAREA.
@@ -318,6 +330,27 @@
            END-EVALUATE
            .
        9000-ENVIA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia un mensaje al terminal del usuario (fin sesion)
+      *----------------------------------------------------------------
+       9000-LLAMAR-PROGRAMA.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                XCTL
+                PROGRAM  (CA-XCTL)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (WA-RESP1-CICS)
+                RESP2    (WA-RESP2-CICS)
+           END-EXEC
+           .
+       9000-LLAMAR-PROGRAMA-EXIT.
            EXIT.
 
       *----------------------------------------------------------------
@@ -370,9 +403,31 @@
       *----------------------------------------------------------------
        9000-ERROR-DB2.
            IF  EIBAID = DFHPF2
-               CONTINUE
+              MOVE WA-PARRAFO              TO CA-E-PARRAFO
+              MOVE -111111111              TO DB2-CODE
+              MOVE DB2-CODE                TO DB2-CODE-EDIT
+              MOVE DB2-CODE-EDIT           TO CA-E-CODIGO
+              MOVE 'ALGUN ERROR DB2'       TO CA-E-MENSAJE
+              MOVE WA-PROG                 TO CA-E-PROG
+              MOVE WA-TRANS                TO CA-E-TRANS
+              MOVE 'FORZAR ERROR'          TO CA-E-ACCION
+              MOVE CP-PGM-ERROR            TO CA-XCTL
+              MOVE WA-TRANS                TO CA-TRANS-RETORNO
+              MOVE WA-PROG                 TO CA-PROG-RETORNO
+              PERFORM 9000-LLAMAR-PROGRAMA
            ELSE
-               CONTINUE
+              MOVE WA-PARRAFO              TO CA-E-PARRAFO
+              MOVE SQLCODE                 TO DB2-CODE
+              MOVE DB2-CODE                TO DB2-CODE-EDIT
+              MOVE DB2-CODE-EDIT           TO CA-E-CODIGO
+              MOVE SQLERRMC                TO CA-E-MENSAJE
+              MOVE WA-PROG                 TO CA-E-PROG
+              MOVE WA-TRANS                TO CA-E-TRANS
+              MOVE 'Select PK Clientes'    TO CA-E-ACCION
+              MOVE CP-PGM-ERROR            TO CA-XCTL
+              MOVE WA-TRANS                TO CA-TRANS-RETORNO
+              MOVE WA-PROG                 TO CA-PROG-RETORNO
+              PERFORM 9000-LLAMAR-PROGRAMA
            END-IF
            .
        9000-ERROR-DB2-EXIT.

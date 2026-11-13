@@ -1,0 +1,434 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. TST1.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ............: HOL                                 *
+      *    PROGRAMA ............: PTST1                               *
+      *    VERSION .............: 1.0                                 *
+      *    TITULO ..............: PROGRAMA PARA PRUEBAS CICS          *
+      *                                                               *
+      *    TIPO ................:                                     *
+      *    - LENGUAJE ..........: COBOL                               *
+      *    - ENTORNO ...........: CICS                                *
+      *    - BASE DE DATOS .....: DB2                                 *
+      *                                                               *
+      *    DESCRIPCIONES........:                                     *
+      *    - Acepta un DNI por pantalla y accede a DB2 para           *
+      *      comprobar si existe un registro en la tabla CLIENTES,    *
+      *      indicando si se ha encontrado o no.                      *
+      *    - Muestra la longitud de la COMMAREA.                      *
+      *    - Fuerza un error para mostrar la pantalla de error.       *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-11-06 Creacion del programa PTST1                     *
+      *    2026-11-13 Añadir la llamada al programa PHOLE             *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA CICS --------------------------------------------------
+       COPY DFHAID.
+       COPY DFHBMSCA.
+       COPY TST1MP.
+      *--- ZONA CICS FIN ----------------------------------------------
+
+      *--- ZONA DB2 ---------------------------------------------------
+           EXEC SQL
+                INCLUDE SQLCA
+           END-EXEC
+
+           EXEC SQL
+                INCLUDE CLIENTES
+           END-EXEC.
+      *--- ZONA DB2 FIN -----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       01  FILLER                          PIC X(19)
+           VALUE '***START-WORKING***'.
+
+       COPY HOLWS.
+
+       01  WS-VARIABLES.
+           03 WS-LENGHT-COMMAREA           PIC Z(08)9.
+
+       01  WI-INDICADORES.
+           03 WI-ENVIO-MAPA                PIC 9(01).
+              88 ENVIO-ERASE                          VALUE 1.
+              88 ENVIO-DATAONLY                       VALUE 2.
+           03 WI-ERROR-VALIDACION          PIC 9(03).
+              88 ERROR-VALIDACION                     VALUE 1.
+
+       01  WL-LITERALES.
+           03 WL-FIN-SESION                PIC X(36)  VALUE
+              'La transaccion TST1 ha finalizado...'.
+
+       01  FILLER                          PIC X(17)
+           VALUE '***END-WORKING***'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+           EXEC SQL
+                INCLUDE PCONFIG
+           END-EXEC
+
+           MOVE CT-TRN-PRUEBA              TO WA-TRANS
+           MOVE CP-PGM-PRUEBA              TO WA-PROG
+
+           IF  EIBCALEN > ZEROS
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+           END-IF
+
+           EVALUATE TRUE
+      *       No hay Commarea
+      *       Se inicializa la Commarea y envia el mapa limpio
+              WHEN EIBCALEN = ZEROS
+                   MOVE LOW-VALUES         TO TST1MPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 9000-ENVIA-MAPA
+
+      *       Hay Commarea
+      *       El programa ha sido arrancado por XCTL desde otro
+      *       programa. En este caso el campo CA-TRANS-RETORNO
+      *       contiene algun valor
+      *       Se inicializa la Commarea y envia el mapa limpio
+              WHEN EIBCALEN > ZEROS
+              AND  CA-TRANS-RETORNO NOT = SPACES
+                   MOVE LOW-VALUES         TO TST1MPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 9000-ENVIA-MAPA
+
+      *       Borrado de la pantalla y envio de mensaje de fin de
+      *       sesion al usuario. Se devuelve el control a CICS
+              WHEN EIBAID = DFHCLEAR
+              OR   EIBAID = DFHPF3
+                   MOVE LOW-VALUES         TO TST1MPO
+                   PERFORM 9000-ENVIA-MENSAJE
+                   PERFORM 9000-RETORNO-CICS
+
+              WHEN EIBAID = DFHENTER
+              OR   EIBAID = DFHPF1
+              OR   EIBAID = DFHPF2
+              OR   EIBAID = DFHPF4
+              OR   EIBAID = DFHPF6
+                   PERFORM 1000-PROCESA-MAPA
+
+              WHEN OTHER
+                   PERFORM 1000-PROCESA-MAPA
+           END-EVALUATE
+
+           PERFORM 9000-RETORNO-TRANS
+           .
+       0000-PRINCIPAL-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la pantalla segun tecla elegida por el usuario
+      *----------------------------------------------------------------
+       1000-PROCESA-MAPA.
+           MOVE ZEROS                      TO WI-ERROR-VALIDACION
+           PERFORM 1100-RECIBE-MAPA
+
+           EVALUATE TRUE
+      *       Enter: Validamos el mapa y si es correcto, procesamos
+              WHEN EIBAID = DFHENTER
+                   PERFORM 1200-VALIDA-MAPA
+                   IF  NOT ERROR-VALIDACION
+                       PERFORM 1300-PROCESA-MAPA
+                   END-IF
+                   MOVE SPACES             TO LONO
+                   SET ENVIO-DATAONLY      TO TRUE
+
+              WHEN EIBAID = DFHPF1
+                   SET ENVIO-DATAONLY      TO TRUE
+
+              WHEN EIBAID = DFHPF2
+                   PERFORM 1500-PROCESO-PF2
+
+              WHEN EIBAID = DFHPF4
+                   PERFORM 1600-LONGITUD-COMMAREA
+                   MOVE SPACES             TO DNIO
+                   MOVE SPACES             TO MSGO
+                   SET ENVIO-DATAONLY      TO TRUE
+
+              WHEN EIBAID = DFHPF6
+                   MOVE LOW-VALUES         TO TST1MPO
+                   SET ENVIO-ERASE         TO TRUE
+
+              WHEN OTHER
+                   MOVE 'Tecla erronea'    TO MSGO
+                   MOVE DFHRED             TO MSGC
+                   SET ENVIO-ERASE         TO TRUE
+           END-EVALUATE
+
+           PERFORM 9000-ENVIA-MAPA
+           .
+       1000-PROCESA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Recibe el mapa de la tarea
+      *----------------------------------------------------------------
+       1100-RECIBE-MAPA.
+           EXEC CICS
+                RECEIVE
+                MAP     ('TST1MP')
+                MAPSET  ('TST1MP')
+                INTO    (TST1MPI)
+           END-EXEC
+
+           PERFORM 1110-MAYUSCULAS
+           .
+       1100-RECIBE-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Transforma a mayusculas los datos sensibles
+      *----------------------------------------------------------------
+       1110-MAYUSCULAS.
+      *    MOVE FUNCTION UPPER-CASE(FDNII) TO FDNIO
+
+           INSPECT DNII CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           .
+       1110-MAYUSCULAS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Valida los datos del mapa
+      *----------------------------------------------------------------
+       1200-VALIDA-MAPA.
+           IF  DNII = SPACES
+           OR  DNII = LOW-VALUES
+           OR  DNII = HIGH-VALUES
+               MOVE 'El campo DNI debe ser rellenado' TO MSGO
+               MOVE DFHRED                 TO MSGC
+               SET ERROR-VALIDACION        TO TRUE
+           END-IF
+           .
+       1200-VALIDA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la tecla ENTER - Acceso a tabla
+      *----------------------------------------------------------------
+       1300-PROCESA-MAPA.
+           MOVE '1300-PROCESA-MAPA'        TO WA-PARRAFO
+
+           MOVE DNII                       TO CL-DNI
+           PERFORM 1310-BUSCA-CLIENTE
+
+           IF  SQLCODE = ZEROS
+               MOVE CL-NOMBRE              TO MSGO
+               MOVE DFHGREEN               TO MSGC
+           ELSE
+               MOVE 'No existe este DNI'   TO MSGO
+               MOVE DFHRED                 TO MSGC
+           END-IF
+           .
+       1300-PROCESA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    DB2 - Select cliente por DNI (PK)
+      *----------------------------------------------------------------
+       1310-BUSCA-CLIENTE.
+           EXEC SQL
+                SELECT DNI,
+                       NOMBRE,
+                       APELLIDOS,
+                       DIRECCION
+                  INTO :CL-DNI,
+                       :CL-NOMBRE,
+                       :CL-APELLIDOS,
+                       :CL-DIRECCION
+                  FROM MCORNER.CLIENTES
+                 WHERE DNI = :CL-DNI
+           END-EXEC
+           .
+       1310-BUSCA-CLIENTE-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Simulamos una deteccion de error de DB2
+      *----------------------------------------------------------------
+       1500-PROCESO-PF2.
+           MOVE '1500-PROCESO-PF2'         TO WA-PARRAFO
+           GO TO 9000-ERROR-DB2
+           .
+       1500-PROCESO-PF2-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Devuelve la longitud de la COMMAREA
+      *----------------------------------------------------------------
+       1600-LONGITUD-COMMAREA.
+           MOVE LENGTH OF CA-COMMAREA-HOL  TO WS-LENGHT-COMMAREA
+           MOVE WS-LENGHT-COMMAREA         TO LONO
+           .
+       1600-LONGITUD-COMMAREA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia el mapa al terminal sergun modo del switch
+      *----------------------------------------------------------------
+       9000-ENVIA-MAPA.
+           EVALUATE TRUE
+      *       Envio deL mapa limpio
+              WHEN ENVIO-ERASE
+                   EXEC CICS
+                        SEND
+                        MAP    ('TST1MP')
+                        MAPSET ('TST1MP')
+                        FROM   (TST1MPO)
+                        ERASE
+                   END-EXEC
+
+      *       Envio del mapa datos unicamente
+              WHEN ENVIO-DATAONLY
+                   EXEC CICS
+                        SEND
+                        MAP      ('TST1MP')
+                        MAPSET   ('TST1MP')
+                        FROM     (TST1MPO)
+                        DATAONLY
+                   END-EXEC
+           END-EVALUATE
+           .
+       9000-ENVIA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia un mensaje al terminal del usuario (fin sesion)
+      *----------------------------------------------------------------
+       9000-LLAMAR-PROGRAMA.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                XCTL
+                PROGRAM  (CA-XCTL)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (WA-RESP1-CICS)
+                RESP2    (WA-RESP2-CICS)
+           END-EXEC
+           .
+       9000-LLAMAR-PROGRAMA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia un mensaje al terminal del usuario (fin sesion)
+      *----------------------------------------------------------------
+       9000-ENVIA-MENSAJE.
+           EXEC CICS
+                SEND
+                TEXT
+                FROM   (WL-FIN-SESION)
+                ERASE
+                FREEKB
+           END-EXEC
+           .
+       9000-ENVIA-MENSAJE-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Devuelve el control a CICS - Salida total
+      *----------------------------------------------------------------
+       9000-RETORNO-CICS.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       9000-RETORNO-CICS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Devuelve el control a una transaccion
+      *----------------------------------------------------------------
+       9000-RETORNO-TRANS.
+           EXEC CICS
+                RETURN
+                TRANSID  (WA-TRANS)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+           END-EXEC
+           .
+       9000-RETORNO-TRANS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Error DB2
+      *----------------------------------------------------------------
+       9000-ERROR-DB2.
+           IF  EIBAID = DFHPF2
+              MOVE WA-PARRAFO              TO CA-E-PARRAFO
+              MOVE -111111111              TO DB2-CODE
+              MOVE DB2-CODE                TO DB2-CODE-EDIT
+              MOVE DB2-CODE-EDIT           TO CA-E-CODIGO
+              MOVE 'ALGUN ERROR DB2'       TO CA-E-MENSAJE
+              MOVE WA-PROG                 TO CA-E-PROG
+              MOVE WA-TRANS                TO CA-E-TRANS
+              MOVE 'FORZAR ERROR'          TO CA-E-ACCION
+              MOVE CP-PGM-ERROR            TO CA-XCTL
+              MOVE WA-TRANS                TO CA-TRANS-RETORNO
+              MOVE WA-PROG                 TO CA-PROG-RETORNO
+              PERFORM 9000-LLAMAR-PROGRAMA
+           ELSE
+              MOVE WA-PARRAFO              TO CA-E-PARRAFO
+              MOVE SQLCODE                 TO DB2-CODE
+              MOVE DB2-CODE                TO DB2-CODE-EDIT
+              MOVE DB2-CODE-EDIT           TO CA-E-CODIGO
+              MOVE SQLERRMC                TO CA-E-MENSAJE
+              MOVE WA-PROG                 TO CA-E-PROG
+              MOVE WA-TRANS                TO CA-E-TRANS
+              MOVE 'Select PK Clientes'    TO CA-E-ACCION
+              MOVE CP-PGM-ERROR            TO CA-XCTL
+              MOVE WA-TRANS                TO CA-TRANS-RETORNO
+              MOVE WA-PROG                 TO CA-PROG-RETORNO
+              PERFORM 9000-LLAMAR-PROGRAMA
+           END-IF
+           .
+       9000-ERROR-DB2-EXIT.
+           EXIT.

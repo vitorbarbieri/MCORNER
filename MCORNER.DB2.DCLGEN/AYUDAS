@@ -3,8 +3,8 @@
       *        LIBRARY(MCORNER.DB2.DCLGEN(AYUDAS))                     *
       *        ACTION(REPLACE)                                         *
       *        LANGUAGE(COBOL)                                         *
-      *        NAMES(HV-)                                              *
-      *        STRUCTURE(HV-CLIENTE)                                   *
+      *        NAMES(AY-)                                              *
+      *        STRUCTURE(AY-AYUDAS)                                    *
       *        QUOTE                                                   *
       *        DBCSDELIM(NO)                                           *
       *        COLSUFFIX(YES)                                          *
@@ -33,43 +33,43 @@
       ******************************************************************
       * COBOL DECLARATION FOR TABLE MCORNER.AYUDAS                     *
       ******************************************************************
-       01  HV-CLIENTE.
+       01  AY-AYUDAS.
       *                       TRANSACCION
-           10 HV-TRANSACCION       PIC X(4).
+           10 AY-TRANSACCION       PIC X(4).
       *                       PAGINA
-           10 HV-PAGINA            PIC S9(9) USAGE COMP.
+           10 AY-PAGINA            PIC S9(9) USAGE COMP.
       *                       L01
-           10 HV-L01               PIC X(80).
+           10 AY-L01               PIC X(80).
       *                       L02
-           10 HV-L02               PIC X(80).
+           10 AY-L02               PIC X(80).
       *                       L03
-           10 HV-L03               PIC X(80).
+           10 AY-L03               PIC X(80).
       *                       L04
-           10 HV-L04               PIC X(80).
+           10 AY-L04               PIC X(80).
       *                       L05
-           10 HV-L05               PIC X(80).
+           10 AY-L05               PIC X(80).
       *                       L06
-           10 HV-L06               PIC X(80).
+           10 AY-L06               PIC X(80).
       *                       L07
-           10 HV-L07               PIC X(80).
+           10 AY-L07               PIC X(80).
       *                       L08
-           10 HV-L08               PIC X(80).
+           10 AY-L08               PIC X(80).
       *                       L09
-           10 HV-L09               PIC X(80).
+           10 AY-L09               PIC X(80).
       *                       L10
-           10 HV-L10               PIC X(80).
+           10 AY-L10               PIC X(80).
       *                       L11
-           10 HV-L11               PIC X(80).
+           10 AY-L11               PIC X(80).
       *                       L12
-           10 HV-L12               PIC X(80).
+           10 AY-L12               PIC X(80).
       *                       L13
-           10 HV-L13               PIC X(80).
+           10 AY-L13               PIC X(80).
       *                       L14
-           10 HV-L14               PIC X(80).
+           10 AY-L14               PIC X(80).
       *                       L15
-           10 HV-L15               PIC X(80).
+           10 AY-L15               PIC X(80).
       *                       L16
-           10 HV-L16               PIC X(80).
+           10 AY-L16               PIC X(80).
       ******************************************************************
       * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 18      *
       ******************************************************************

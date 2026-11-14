@@ -55,6 +55,11 @@ ACC      DFHMDF POS=(06,14),                                           X
          DFHMDF POS=(06,16),                                           X
                LENGTH=01,                                              X
                ATTRB=ASKIP
+         DFHMDF POS=(06,18),                                           X
+               LENGTH=47,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='(A=Alta / C=Consulta / M=Modifica / B=Baja)'
 *
          DFHMDF POS=(08,02),                                           X
                LENGTH=11,                                              X

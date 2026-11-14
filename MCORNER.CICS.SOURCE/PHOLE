@@ -50,11 +50,15 @@
        COPY HOLEMP.
       *--- ZONA CICS FIN ----------------------------------------------
 
+      *--- ZONA COMMAREA ----------------------------------------------
+       01  FILLER                          PIC X(10) VALUE 'I-COMMAREA'.
+       COPY HOLWS.
+       01  FILLER                          PIC X(10) VALUE 'F-COMMAREA'.
+      *--- ZONA COMMAREA FIN ------------------------------------------
+
       *--- ZONA WORKING -----------------------------------------------
        01  FILLER                          PIC X(19)
            VALUE '***START-WORKING***'.
-
-       COPY HOLWS.
 
        01  WI-INDICADORES.
            03 WI-ENVIO-MAPA                PIC 9(01).

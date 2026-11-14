@@ -1,0 +1,712 @@
+      *****************************************************************
+      *                    IDENTIFICATION DIVISION                    *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+
+       PROGRAM-ID. HOLZ.
+       AUTHOR. VITOR BARBIERI.
+
+      *****************************************************************
+      *    PROYECTO ............: HOL                                 *
+      *    PROGRAMA ............: PHOLZ                               *
+      *    VERSION .............: 1.0                                 *
+      *    TITULO ..............: PROGRAMA VISUALIZADOR DE ERRORES    *
+      *                                                               *
+      *    TIPO ................:                                     *
+      *    - LENGUAJE ..........: COBOL                               *
+      *    - ENTORNO ...........: CICS                                *
+      *    - BASE DE DATOS .....: DB2                                 *
+      *                                                               *
+      *    DESCRIPCIONES........:                                     *
+      *    - Permite Altas, Bajas, Consultas y Modificaciones de      *
+      *      registros de la tabla DB2 llamada TABLAS                 *
+      *    - Es una transaccion destinada a administradores de la     *
+      *      aplicacion HOL                                           *
+      *                                                               *
+      *    LOG DE MODIFICACIONES:                                     *
+      *    FECHA----- DESCRIPCION------------------------------------ *
+      *    2026-11-13 Creacion del programa PHOLZ                     *
+      *                                                               *
+      *****************************************************************
+
+      *****************************************************************
+      *                      ENVIRONMENT DIVISION                     *
+      *****************************************************************
+       ENVIRONMENT DIVISION.
+
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+
+      *****************************************************************
+      *                         DATA DIVISION                         *
+      *****************************************************************
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+      *--- ZONA CICS --------------------------------------------------
+       COPY DFHAID.
+       COPY DFHBMSCA.
+       COPY HOLZMP.
+      *--- ZONA CICS FIN ----------------------------------------------
+
+      *--- ZONA COMMAREA ----------------------------------------------
+       01  FILLER                          PIC X(10) VALUE 'I-COMMAREA'.
+       COPY HOLWS.
+       01  FILLER                          PIC X(10) VALUE 'F-COMMAREA'.
+      *--- ZONA COMMAREA FIN ------------------------------------------
+
+      *--- ZONA DB2 ---------------------------------------------------
+           EXEC SQL
+                INCLUDE SQLCA
+           END-EXEC
+
+           EXEC SQL
+                INCLUDE TABLAS
+           END-EXEC
+      *--- ZONA DB2 FIN -----------------------------------------------
+
+      *--- ZONA WORKING -----------------------------------------------
+       01  FILLER                          PIC X(19)
+           VALUE '***START-WORKING***'.
+
+       01  WC-CONSTANTES.
+           03 WC-LONGITUD-TITULO           PIC 9(02) VALUE 74.
+           03 WC-CUR-ACCION                PIC S9(04) COMP VALUE 414.
+           03 WC-CUR-TABLA                 PIC S9(04) COMP VALUE 574.
+           03 WC-CUR-CLAVE1                PIC S9(04) COMP VALUE 734.
+           03 WC-CUR-CLAVE2                PIC S9(04) COMP VALUE 814.
+           03 WC-CUR-CLAVE3                PIC S9(04) COMP VALUE 894.
+           03 WC-CUR-VALOR                 PIC S9(04) COMP VALUE 1054.
+
+       01  WI-INDICADORES.
+           03 WI-ENVIO-MAPA                PIC 9(01).
+              88 ENVIO-ERASE                         VALUE 1.
+              88 ENVIO-DATAONLY                      VALUE 2.
+           03 WI-ERROR-VALIDACION          PIC 9(01).
+              88 ERROR-VALIDACION                    VALUE 1.
+
+       01  WL-LITERALES.
+           03 WL-FIN-SESION                PIC X(36) VALUE
+              'La transaccion HOLZ ha finalizado...'.
+
+       01  FILLER                          PIC X(17)
+           VALUE '***END-WORKING***'.
+      *--- ZONA WORKING FIN -------------------------------------------
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA                     PIC X(2048).
+
+      *****************************************************************
+      *                       PROCEDURE DIVISION                      *
+      *****************************************************************
+       PROCEDURE DIVISION.
+
+      *----------------------------------------------------------------
+      *    PROCESO PRINCIPAL
+      *----------------------------------------------------------------
+       0000-PRINCIPAL.
+           EXEC SQL
+                INCLUDE PCONFIG
+           END-EXEC
+
+           MOVE CT-TRN-TABLAS              TO WA-TRANS
+
+           IF  EIBCALEN > ZEROS
+               MOVE DFHCOMMAREA            TO CA-COMMAREA-HOL
+           END-IF
+
+           EVALUATE TRUE
+      *       No hay Commarea
+      *       Se inicializa la Commarea y envia el mapa limpio
+              WHEN EIBCALEN = ZEROS
+                   MOVE LOW-VALUES         TO HOLZMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 9000-ENVIA-MAPA
+
+      *       Hay Commarea
+      *       El programa ha sido arrancado por XCTL desde otro
+      *       programa. En este caso el campo CA-TRANS-RETORNO
+      *       contiene algun valor
+      *       Se inicializa la Commarea y envia el mapa limpio
+              WHEN EIBCALEN > ZEROS
+              AND  CA-TRANS-RETORNO NOT = SPACES
+                   MOVE LOW-VALUES         TO HOLZMPO
+                   INITIALIZE              CA-COMMAREA-HOL
+                   SET ENVIO-ERASE         TO TRUE
+                   PERFORM 9000-ENVIA-MAPA
+
+      *       Borrado de la pantalla y envio de mensaje de fin de
+      *       sesion al usuario. Se devuelve el control a CICS
+              WHEN EIBAID = DFHCLEAR
+              OR   EIBAID = DFHPF3
+                   MOVE LOW-VALUES         TO HOLZMPO
+                   PERFORM 9000-ENVIA-MENSAJE
+                   PERFORM 9000-RETORNO-CICS
+
+              WHEN EIBAID = DFHENTER
+                   PERFORM 1000-PROCESA-MAPA
+
+              WHEN OTHER
+                   PERFORM 1000-PROCESA-MAPA
+           END-EVALUATE
+
+           PERFORM 9000-RETORNO-TRANS
+           .
+       0000-PRINCIPAL-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la pantalla segun tecla elegida por el usuario
+      *----------------------------------------------------------------
+       1000-PROCESA-MAPA.
+           MOVE SPACES                     TO MSGO
+           MOVE EIBCPOSN                   TO CA-CURPOS
+
+           PERFORM 1100-RECIBE-MAPA
+
+           EVALUATE TRUE
+              WHEN EIBAID = DFHENTER
+                   PERFORM 2000-VALIDA-TRATA-MAPA
+
+              WHEN OTHER
+                   MOVE WC-CUR-TABLA       TO CA-CURPOS
+                   MOVE DFHRED             TO MSGC
+                   MOVE 'Tecla erronea'    TO MSGO
+           END-EVALUATE
+
+           SET ENVIO-DATAONLY              TO TRUE
+           PERFORM 9000-ENVIA-MAPA
+           .
+       1000-PROCESA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Recibe el mapa de la tarea
+      *----------------------------------------------------------------
+       1100-RECIBE-MAPA.
+           EXEC CICS
+                RECEIVE
+                MAP     ('HOLZMP')
+                MAPSET  ('HOLZMP')
+                INTO    (HOLZMPI)
+           END-EXEC
+
+           PERFORM 1110-MAYUSCULAS
+           .
+       1100-RECIBE-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Transforma a mayusculas los datos sensibles
+      *----------------------------------------------------------------
+       1110-MAYUSCULAS.
+      *    MOVE FUNCTION UPPER-CASE(ACCI) TO ACCO
+      *    MOVE FUNCTION UPPER-CASE(TABI) TO TABO
+      *    MOVE FUNCTION UPPER-CASE(CL1I) TO CL1O
+      *    MOVE FUNCTION UPPER-CASE(CL2I) TO CL2O
+      *    MOVE FUNCTION UPPER-CASE(CL3I) TO CL3O
+
+           INSPECT ACCI CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           INSPECT TABI CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           INSPECT CL1I CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           INSPECT CL2I CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           INSPECT CL3I CONVERTING 'abcdefghijklmnopqrstuvwxyz'
+                                TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+           .
+       1110-MAYUSCULAS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Valida la Accion solo A, B, C o M
+      *----------------------------------------------------------------
+       2000-VALIDA-TRATA-MAPA.
+           MOVE ZEROS                      TO WI-ERROR-VALIDACION
+
+           EVALUATE TRUE
+              WHEN ACCI = 'A'
+                   PERFORM 2100-ALTA
+              WHEN ACCI = 'C'
+                   PERFORM 2200-CONSULTA
+              WHEN ACCI = 'M'
+                   PERFORM 2300-MODIFICACION
+              WHEN ACCI = 'B'
+                   PERFORM 2400-BAJA
+              WHEN OTHER
+                   SET ERROR-VALIDACION    TO TRUE
+                   MOVE DFHRED             TO MSGC
+                   MOVE WC-CUR-ACCION      TO CA-CURPOS
+                   MOVE 'La accion no es valida. Solo A, C, M o B'
+                                           TO MSGO
+           END-EVALUATE
+           .
+       2000-VALIDA-TRATA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Proceso Alta
+      *----------------------------------------------------------------
+       2100-ALTA.
+           PERFORM 9000-VALIDA-TABLA
+           PERFORM 9000-VALIDA-CLAVE1
+           PERFORM 9000-VALIDA-VALOR
+
+           IF  NOT ERROR-VALIDACION
+               PERFORM 9000-MUEVE-DATOS
+               PERFORM 2110-INSERTA-TABLA
+           END-IF
+           .
+       2100-ALTA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la Alta en la tabla Tabla
+      *----------------------------------------------------------------
+       2110-INSERTA-TABLA.
+           PERFORM 7000-DB2-EXISTE
+           IF  SQLCODE = ZEROS
+               SET ERROR-VALIDACION        TO TRUE
+               MOVE DFHRED                 TO MSGC
+               MOVE 'El registro ya existe' TO MSGO
+           END-IF
+
+           IF  NOT ERROR-VALIDACION
+               MOVE VALI                   TO TB-VALOR
+               PERFORM 7100-DB2-ALTA
+               MOVE DFHGREEN               TO MSGC
+               MOVE 'OK - Registro creado' TO MSGO
+           END-IF
+           .
+       2110-INSERTA-TABLA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa Consulta
+      *----------------------------------------------------------------
+       2200-CONSULTA.
+           PERFORM 9000-VALIDA-TABLA
+           PERFORM 9000-VALIDA-CLAVE1
+
+           IF  NOT ERROR-VALIDACION
+               PERFORM 9000-MUEVE-DATOS
+               PERFORM 2210-CONSULTA-TABLA
+           END-IF
+           .
+       2200-CONSULTA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la Consulta en la tabla Tabla
+      *----------------------------------------------------------------
+       2210-CONSULTA-TABLA.
+           PERFORM 7000-DB2-EXISTE
+           IF  SQLCODE = +100
+               MOVE DFHRED                 TO MSGC
+               MOVE 'El registro no existe' TO MSGO
+           ELSE
+               PERFORM 7200-DB2-CONSULTA
+               MOVE TB-VALOR               TO VALO
+               MOVE DFHGREEN               TO MSGC
+               MOVE 'OK - Registro mostrado' TO MSGO
+           END-IF
+           .
+       2210-CONSULTA-TABLA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa Modificacion
+      *----------------------------------------------------------------
+       2300-MODIFICACION.
+           PERFORM 9000-VALIDA-TABLA
+           PERFORM 9000-VALIDA-CLAVE1
+           PERFORM 9000-VALIDA-VALOR
+
+           IF  NOT ERROR-VALIDACION
+               PERFORM 9000-MUEVE-DATOS
+               PERFORM 2310-MODIFICA-TABLA
+           END-IF
+           .
+       2300-MODIFICACION-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la Modificacion en la tabla Tabla
+      *----------------------------------------------------------------
+       2310-MODIFICA-TABLA.
+           PERFORM 7000-DB2-EXISTE
+           IF  SQLCODE = +100
+               SET ERROR-VALIDACION        TO TRUE
+               MOVE DFHRED                 TO MSGC
+               MOVE 'El registro no existe' TO MSGO
+           END-IF
+
+           IF NOT ERROR-VALIDACION
+              PERFORM 7300-DB2-MODIFICA
+              MOVE DFHGREEN                TO MSGC
+              MOVE 'OK - Registro actualizado' TO MSGO
+           END-IF
+           .
+       2310-MODIFICA-TABLA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa BAJA
+      *----------------------------------------------------------------
+       2400-BAJA.
+           PERFORM 9000-VALIDA-TABLA
+           PERFORM 9000-VALIDA-CLAVE1
+
+           IF NOT ERROR-VALIDACION
+              PERFORM 9000-MUEVE-DATOS
+              PERFORM 2410-BAJA-TABLA
+           END-IF
+           .
+       2400-BAJA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Procesa la bAJA en la tabla Tabla
+      *----------------------------------------------------------------
+       2410-BAJA-TABLA.
+           PERFORM 7000-DB2-EXISTE
+           IF  SQLCODE = +100
+               SET ERROR-VALIDACION        TO TRUE
+               MOVE DFHRED                 TO MSGC
+               MOVE 'El registro no existe' TO MSGO
+           END-IF
+
+           IF  NOT ERROR-VALIDACION
+               PERFORM 7400-DB2-BAJA
+               MOVE DFHGREEN               TO MSGC
+               MOVE 'OK - Regsitro eliminado' TO MSGO
+               MOVE SPACES                 TO CL1O
+               MOVE SPACES                 TO CL2O
+               MOVE SPACES                 TO CL3O
+               MOVE SPACES                 TO VALO
+           END-IF
+           .
+       2410-BAJA-TABLA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Verifica si el registro existe en DB2
+      *----------------------------------------------------------------
+       7000-DB2-EXISTE.
+           EXEC SQL
+                SELECT TABLA,
+                       CLAVE1,
+                       CLAVE2,
+                       CLAVE3
+                  INTO :TB-TABLA,
+                       :TB-CLAVE1,
+                       :TB-CLAVE2,
+                       :TB-CLAVE3
+                  FROM MCORNER.TABLAS
+                 WHERE TABLA  = :TB-TABLA
+                   AND CLAVE1 = :TB-CLAVE1
+                   AND CLAVE2 = :TB-CLAVE2
+                   AND CLAVE3 = :TB-CLAVE3
+           END-EXEC
+
+           IF  SQLCODE NOT = ZEROS
+           AND SQLCODE NOT = +100
+               MOVE '7000-DB2-EXISTE'      TO WA-PARRAFO
+               MOVE 'EXISTE CODIGO'        TO WA-ACCION
+               PERFORM 9000-ERROR-DB2
+           END-IF
+           .
+       7000-DB2-EXISTE-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *--- Alta en DB2                                              ---
+      *----------------------------------------------------------------
+       7100-DB2-ALTA.
+           EXEC SQL
+                INSERT INTO MCORNER.TABLAS (
+                   TABLA,
+                   CLAVE1,
+                   CLAVE2,
+                   CLAVE3,
+                   VALOR
+                )
+                VALUES (
+                   :TB-TABLA,
+                   :TB-CLAVE1,
+                   :TB-CLAVE2,
+                   :TB-CLAVE3,
+                   :TB-VALOR
+                )
+           END-EXEC
+
+           IF  SQLCODE NOT = ZEROS
+               MOVE '7100-DB2-ALTA'        TO WA-PARRAFO
+               MOVE 'ALTA CODIGO'          TO WA-ACCION
+               PERFORM 9000-ERROR-DB2
+           END-IF
+           .
+       7100-DB2-ALTA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *--- Consulta en DB2                                          ---
+      *----------------------------------------------------------------
+       7200-DB2-CONSULTA.
+           EXEC SQL
+                SELECT TABLA,
+                       CLAVE1,
+                       CLAVE2,
+                       CLAVE3,
+                       VALOR
+                  INTO :TB-TABLA,
+                       :TB-CLAVE1,
+                       :TB-CLAVE2,
+                       :TB-CLAVE3,
+                       :TB-VALOR
+                  FROM MCORNER.TABLAS
+                 WHERE TABLA  = :TB-TABLA
+                   AND CLAVE1 = :TB-CLAVE1
+                   AND CLAVE2 = :TB-CLAVE2
+                   AND CLAVE3 = :TB-CLAVE3
+           END-EXEC
+      *
+           IF  SQLCODE NOT = ZEROS
+           AND SQLCODE NOT = +100
+               MOVE '7200-DB2-CONSULTA'     TO WA-PARRAFO
+               MOVE 'CONSULTA CODIGO'       TO WA-ACCION
+               PERFORM 9000-ERROR-DB2
+           END-IF
+           .
+       7200-DB2-CONSULTA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Modificacion en DB2
+      *----------------------------------------------------------------
+       7300-DB2-MODIFICA.
+           EXEC SQL
+                UPDATE MCORNER.TABLAS
+                   SET TABLA  = :TB-TABLA,
+                       CLAVE1 = :TB-CLAVE1,
+                       CLAVE2 = :TB-CLAVE2,
+                       CLAVE3 = :TB-CLAVE3,
+                       VALOR  = :TB-VALOR
+                 WHERE TABLA  = :TB-TABLA
+                   AND CLAVE1 = :TB-CLAVE1
+                   AND CLAVE2 = :TB-CLAVE2
+                   AND CLAVE3 = :TB-CLAVE3
+           END-EXEC
+
+           IF  SQLCODE NOT = ZEROS
+               MOVE '7000-DB2-MODIFICA'    TO WA-PARRAFO
+               MOVE 'MODIFICA CODIGO'      TO WA-ACCION
+               PERFORM 9000-ERROR-DB2
+           END-IF
+           .
+       7300-DB2-MODIFICA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Baja en DB2
+      *----------------------------------------------------------------
+       7400-DB2-BAJA.
+           EXEC SQL
+                DELETE FROM MCORNER.TABLAS
+                 WHERE TABLA  = :TB-TABLA
+                   AND CLAVE1 = :TB-CLAVE1
+                   AND CLAVE2 = :TB-CLAVE2
+                   AND CLAVE3 = :TB-CLAVE3
+           END-EXEC
+
+           IF  SQLCODE NOT = ZEROS
+               MOVE '7400-DB2-BAJA'        TO WA-PARRAFO
+               MOVE 'BAJA CODIGO'          TO WA-ACCION
+               PERFORM 9000-ERROR-DB2
+           END-IF
+           .
+       7400-DB2-BAJA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Valida el campo Tabla
+      *----------------------------------------------------------------
+       9000-VALIDA-TABLA.
+           IF  TABI = SPACES
+           OR  TABI = LOW-VALUES
+           OR  TABI = HIGH-VALUES
+               MOVE 1                      TO WI-ERROR-VALIDACION
+               MOVE WC-CUR-TABLA           TO CA-CURPOS
+               MOVE 'Tabla es obligatorio' TO MSGO
+               MOVE DFHRED                 TO MSGC
+           END-IF
+           .
+       9000-VALIDA-TABLA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Valida el campo Clave1
+      *----------------------------------------------------------------
+       9000-VALIDA-CLAVE1.
+           IF  CL1I = SPACES
+           OR  CL1I = LOW-VALUES
+           OR  CL1I = HIGH-VALUES
+               MOVE 1                      TO WI-ERROR-VALIDACION
+               MOVE WC-CUR-CLAVE1          TO CA-CURPOS
+               MOVE 'Clave-1 es obligatorio' TO MSGO
+               MOVE DFHRED                 TO MSGC
+           END-IF
+           .
+       9000-VALIDA-CLAVE1-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Valida el campo Valor
+      *----------------------------------------------------------------
+       9000-VALIDA-VALOR.
+           IF  VALI = SPACES
+           OR  VALI = LOW-VALUES
+           OR  VALI = HIGH-VALUES
+               MOVE 1                      TO WI-ERROR-VALIDACION
+               MOVE WC-CUR-VALOR           TO CA-CURPOS
+               MOVE 'Valor es obligatorio' TO MSGO
+               MOVE DFHRED                 TO MSGC
+           END-IF
+           .
+       9000-VALIDA-VALOR-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Mueve los datos de la pantalla a la tabla DB2
+      *----------------------------------------------------------------
+       9000-MUEVE-DATOS.
+           MOVE TABI                       TO TB-TABLA
+           MOVE CL1I                       TO TB-CLAVE1
+           MOVE CL2I                       TO TB-CLAVE2
+           MOVE CL3I                       TO TB-CLAVE3
+           MOVE VALI                       TO TB-VALOR
+           .
+       9000-MUEVE-DATOS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia el mapa al terminal sergun modo del indicador
+      *----------------------------------------------------------------
+       9000-ENVIA-MAPA.
+           EVALUATE TRUE
+      *        Envio de mapa limpio
+               WHEN ENVIO-ERASE
+                    EXEC CICS
+                         SEND
+                         MAP    ('HOLZMP')
+                         MAPSET ('HOLZMP')
+                         FROM   (HOLZMPO)
+                         ERASE
+                    END-EXEC
+
+      *        Envio del mapa Solo datos
+               WHEN ENVIO-DATAONLY
+                    EXEC CICS
+                         SEND
+                         MAP      ('HOLZMP')
+                         MAPSET   ('HOLZMP')
+                         FROM     (HOLZMPO)
+                         DATAONLY
+                         CURSOR   (CA-CURPOS)
+                    END-EXEC
+           END-EVALUATE
+           .
+       9000-ENVIA-MAPA-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia un mensaje al terminal del usuario (fin sesion)
+      *----------------------------------------------------------------
+       9000-ENVIA-MENSAJE.
+           EXEC CICS
+                SEND
+                TEXT
+                FROM   (WL-FIN-SESION)
+                ERASE
+                FREEKB
+           END-EXEC
+           .
+       9000-ENVIA-MENSAJE-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Devuelve el control a CICS - Salida total
+      *----------------------------------------------------------------
+       9000-RETORNO-CICS.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                RETURN
+           END-EXEC
+           .
+       9000-RETORNO-CICS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Devuelve el control a una transaccion
+      *----------------------------------------------------------------
+       9000-RETORNO-TRANS.
+           EXEC CICS
+                RETURN
+                TRANSID  (WA-TRANS)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+           END-EXEC
+           .
+       9000-RETORNO-TRANS-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Error DB2
+      *----------------------------------------------------------------
+       9000-ERROR-DB2.
+           MOVE WA-PARRAFO                 TO CA-E-PARRAFO
+           MOVE SQLCODE                    TO DB2-CODE
+           MOVE DB2-CODE                   TO DB2-CODE-EDIT
+           MOVE DB2-CODE-EDIT              TO CA-E-CODIGO
+           MOVE SQLERRMC                   TO CA-E-MENSAJE
+           MOVE WA-PROG                    TO CA-E-PROG
+           MOVE WA-TRANS                   TO CA-E-TRANS
+           MOVE WA-ACCION                  TO CA-E-ACCION
+           MOVE CP-PGM-ERROR               TO CA-XCTL
+           MOVE WA-TRANS                   TO CA-TRANS-RETORNO
+           MOVE WA-PROG                    TO CA-PROG-RETORNO
+           PERFORM 9000-XCTL-PROGRAMA
+           .
+       9000-ERROR-DB2-EXIT.
+           EXIT.
+
+      *----------------------------------------------------------------
+      *    Envia un mensaje al terminal del usuario (fin sesion)
+      *----------------------------------------------------------------
+       9000-XCTL-PROGRAMA.
+           EXEC CICS
+                SET TERMINAL(EIBTRMID)
+                UCTRAN
+           END-EXEC
+
+           EXEC CICS
+                XCTL
+                PROGRAM  (CA-XCTL)
+                COMMAREA (CA-COMMAREA-HOL)
+                LENGTH   (LENGTH OF CA-COMMAREA-HOL)
+                RESP     (WA-RESP1-CICS)
+                RESP2    (WA-RESP2-CICS)
+           END-EXEC
+           .
+       9000-XCTL-PROGRAMA-EXIT.
+           EXIT.

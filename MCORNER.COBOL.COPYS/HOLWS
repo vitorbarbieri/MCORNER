@@ -20,10 +20,12 @@
        01  CP-PROGRAMAS-HOL.
            03 CP-PGM-PRUEBA                PIC X(08) VALUE 'PTST1'.
            03 CP-PGM-ERROR                 PIC X(08) VALUE 'PHOLE'.
+           03 CP-PGM-TABLAS                PIC X(08) VALUE 'PHOLZ'.
 
        01  CT-TRANSACCIONES-HOL.
            03 CT-TRN-PRUEBA                PIC X(04) VALUE 'TST1'.
            03 CT-TRN-ERROR                 PIC X(04) VALUE 'HOLE'.
+           03 CT-TRN-TABLAS                PIC X(04) VALUE 'HOLZ'.
 
        01  WA-VARIABLES-HOL.
            03 WA-TRANS                     PIC X(04) VALUE SPACES.
@@ -31,6 +33,7 @@
            03 WA-PARRAFO                   PIC X(30) VALUE SPACES.
            03 WA-RESP1-CICS                PIC S9(08) COMP VALUE ZEROS.
            03 WA-RESP2-CICS                PIC S9(08) COMP VALUE ZEROS.
+           03 WA-ACCION                    PIC X(20) VALUE SPACES.
 
        01  DB2-AREA.
            03 DB2-CODE                     PIC S9(09) VALUE ZEROS.

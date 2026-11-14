@@ -1,0 +1,163 @@
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                     -----  MAP  'HOLZMP'  -----                     *
+*                MANTENIMIENTO DE TALAS DE CODIGOS HOL                *
+*                             VERSION 1.0                             *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+HOLZMP   DFHMSD MODE=INOUT,                                            X
+               LANG=COBOL,                                             X
+               TYPE=DSECT,                                             X
+               TERM=ALL,                                               X
+               TIOAPFX=YES,                                            X
+               STORAGE=AUTO,                                           X
+               CTRL=FREEKB,                                            X
+               EXTATT=YES,                                             X
+               COLOR=GREEN,                                            X
+               MAPATTS=(COLOR,HILIGHT,OUTLINE),                        X
+               DSATTS=(COLOR,HILIGHT,OUTLINE)
+*
+HOLZMP   DFHMDI SIZE=(24,80),                                          X
+               LINE=01,                                                X
+               COLUMN=01
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                             ENCABEZADO                              *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+TRN      DFHMDF POS=(01,01),                                           X
+               LENGTH=04,                                              X
+               ATTRB=(PROT,FSET,BRT),                                  X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='HOLZ'
+*
+TITLE    DFHMDF POS=(01,32),                                           X
+               LENGTH=20,                                              X
+               ATTRB=(PROT,BRT),                                       X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='Mantenimiento Tablas'
+*
+         DFHMDF POS=(02,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               CUERPO                                *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+         DFHMDF POS=(06,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Accion....:'
+ACC      DFHMDF POS=(06,14),                                           X
+               LENGTH=01,                                              X
+               ATTRB=(UNPROT,NORM,FSET,IC),                            X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(06,16),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+         DFHMDF POS=(06,18),                                           X
+               LENGTH=47,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='(A=Alta / C=Consulta / M=Modifica / B=Baja)'
+*
+         DFHMDF POS=(08,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Tabla.....:'
+TAB      DFHMDF POS=(08,14),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(UNPROT,NORM,FSET),                               X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(08,23),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+*
+         DFHMDF POS=(10,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Clave-1...:'
+CL1      DFHMDF POS=(10,14),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(UNPROT,NORM,FSET),                               X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(10,23),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+*
+         DFHMDF POS=(11,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Clave-2...:'
+CL2      DFHMDF POS=(11,14),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(UNPROT,NORM,FSET),                               X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(11,23),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+*
+         DFHMDF POS=(12,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Clave-3...:'
+CL3      DFHMDF POS=(12,14),                                           X
+               LENGTH=08,                                              X
+               ATTRB=(UNPROT,NORM,FSET),                               X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(12,23),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+*
+         DFHMDF POS=(14,02),                                           X
+               LENGTH=11,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=BLUE,                                             X
+               INITIAL='Valor.....:'
+VAL      DFHMDF POS=(14,14),                                           X
+               LENGTH=64,                                              X
+               ATTRB=(UNPROT,NORM,FSET),                               X
+               HILIGHT=UNDERLINE,                                      X
+               COLOR=GREEN
+         DFHMDF POS=(14,79),                                           X
+               LENGTH=01,                                              X
+               ATTRB=ASKIP
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                            PIE DE PAGINA                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+         DFHMDF POS=(21,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+         DFHMDF POS=(22,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='F1-Ayuda        F3-Salir                       X
+                                Intro-Procesar'
+*
+         DFHMDF POS=(23,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,NORM),                                      X
+               COLOR=NEUTRAL,                                          X
+               INITIAL='-----------------------------------------------X
+               -------------------------------'
+*
+MSG      DFHMDF POS=(24,01),                                           X
+               LENGTH=78,                                              X
+               ATTRB=(PROT,BRT,FSET),                                  X
+               COLOR=RED
+*
+         DFHMSD TYPE=FINAL
+         END

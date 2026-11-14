@@ -63,11 +63,15 @@
            END-EXEC.
       *--- ZONA DB2 FIN -----------------------------------------------
 
+      *--- ZONA COMMAREA ----------------------------------------------
+       01  FILLER                          PIC X(10) VALUE 'I-COMMAREA'.
+       COPY HOLWS.
+       01  FILLER                          PIC X(10) VALUE 'F-COMMAREA'.
+      *--- ZONA COMMAREA FIN ------------------------------------------
+
       *--- ZONA WORKING -----------------------------------------------
        01  FILLER                          PIC X(19)
            VALUE '***START-WORKING***'.
-
-       COPY HOLWS.
 
        01  WS-VARIABLES.
            03 WS-LENGHT-COMMAREA           PIC Z(08)9.
@@ -220,7 +224,7 @@
       *    Transforma a mayusculas los datos sensibles
       *----------------------------------------------------------------
        1110-MAYUSCULAS.
-      *    MOVE FUNCTION UPPER-CASE(FDNII) TO FDNIO
+      *    MOVE FUNCTION UPPER-CASE(DNII) TO DNIO
 
            INSPECT DNII CONVERTING 'abcdefghijklmnopqrstuvwxyz'
                                 TO 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
